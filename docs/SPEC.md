@@ -92,6 +92,15 @@ kyufy_core/
 - **DocumentChunk**: `source_document_id`, `content`, `embedding vector(N)`, `position`. pgvector HNSW/ivfflat index.
 - **Profile is never persisted** (avoid PII storage). It is a value object passed in at assess time.
 
+### Identifiers
+- **PKs are bigint** (Rails default). Do not use UUID primary keys: internal models are never enumerable from outside, and bigint keeps pgvector joins and indexes fast.
+- **External identifiers use the `prefixed_ids` gem** (MIT), applied **from the first migration** to every model that can ever cross the API boundary:
+  - `Program` → `has_prefixed_id :prog`
+  - `Requirement` → `has_prefixed_id :req`
+  - `SourceDocument` → `has_prefixed_id :doc`
+  - `DocumentChunk` → **none** (purely internal, hottest pgvector path, structurally never exposed — what leaves the system is a chunk's quoted text, not its ID).
+- Rationale (asymmetry): adding a prefixed ID later costs one line, but by then raw bigint IDs will have leaked into API responses, making the switch a breaking change for external consumers of this public gem. Cost of adding now ≈ zero; cost of retrofitting is uncertain but positive. All JSON/API output must therefore expose prefixed IDs only, never raw PKs, from day one.
+
 ## 5. Ingestion architecture (ports and adapters / DIP)
 Municipal data varies wildly in format (PDF / HTML / CSV / catalog APIs) and wording. The design absorbs that variance at **ingestion time, once**, so the assessment side never sees it.
 
