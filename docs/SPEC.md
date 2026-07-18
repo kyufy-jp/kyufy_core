@@ -5,7 +5,7 @@
 >
 > **Domain-term convention:** Japanese public-benefit concepts are kept in Japanese on purpose (translating them loses legal nuance). Keep these as Japanese string literals / documented enums: 給付金 (individual benefit), 補助金 / 助成金 (business subsidy/grant), 手当 (allowance), 控除 (deduction), 世帯 (household), 所管 (administering authority), 要綱 (program guidelines/regulations), 所得 (net/taxable income — distinct from 収入 gross income). Everything else is English.
 >
-> Rev. 2 — amended after implementation review (retrieval recall, geographic scoping, income semantics, port contract, aggregation precedence, validity filtering, embedding testability, identifier exposure).
+> Rev. 2.1 — amended after implementation review (retrieval recall, geographic scoping, income semantics, port contract, aggregation precedence, validity filtering, embedding testability, identifier exposure). Rev 2.1 adds: designated-city ward matching, step-0 normalization carve-out, document_ref pinned to integer index, filter_parameters tradeoff acknowledgment.
 
 ---
 
@@ -99,6 +99,8 @@ kyufy_core/
 ## 4. Data model (key fields)
 - **Program (制度)**: `name`, `authority` (所管, free text), `jurisdiction` (enum: national / prefecture / municipality), **`prefecture_code`** (JIS X 0401, nullable — null for national), **`municipality_code`** (JIS X 0402, nullable — null for national/prefecture-level), `category` (enum: 給付金 / 補助金 / 助成金 / 手当 / 控除), `target` (individual / business), `official_url`, `valid_from` (nullable = open start), `valid_until` (nullable = open end), `status` (enum: active / inactive).
   - Geographic applicability semantics (implement in `geo.rb`): a resident of municipality M in prefecture P is covered by (a) all national programs, (b) prefecture programs with `prefecture_code == P`, (c) municipality programs with `municipality_code == M`. **national ⊃ prefecture ⊃ municipality all apply simultaneously.**
+  - **政令指定都市 wards**: JIS X 0402 gives wards their own codes (さいたま市中央区 = 11105) distinct from the parent city (さいたま市 = 11100), so strict equality would miss city-wide programs for a ward resident — a silent omission forbidden by §0. `geo.rb` must treat ward codes as children of their designated city: matching succeeds if `municipality_code == M` **or** `municipality_code == parent_city_of(M)`. (Normalize with a ward→city table for the 20 designated cities. Seed programs are Tokyo-sourced per hackathon requirements — but this still bites on day one, because the demo Profile itself, さいたま市中央区, is a designated-city ward; and any future expansion hits the 20 designated cities regardless.)
+  - **東京23区 (特別区) are NOT designated-city wards**: each special ward is a full municipality in its own right (JIS 13101–13123) with **no parent city** — it sits directly under 東京都. `geo.rb` must NOT attempt parent-city normalization for 特別区; a 新宿区 resident matches 新宿区 programs directly, plus 東京都 prefecture-level programs, plus national. The ward→city table therefore covers only the 20 designated cities' wards and must exclude codes 131xx. (The likely demo Profile is a 23-ward resident, so getting this wrong breaks the main demo.)
 - **Requirement (要件)**: `program_id`, `kind` (income / age / residence / household / employment / other), `operator` (lt / lte / gt / gte / eq / in / exists), `value` (jsonb), `raw_text` (the exact 要綱 excerpt), `source_document_id`. → Holding **both** a machine-readable condition and the original quoted text is the crux.
   - `kind: income` semantics are fixed: the value is **prior-year 所得 (net/taxable income) in JPY** unless the requirement's `value` jsonb explicitly overrides with `{ "measure": "収入" }`. This matches the Profile field definition in §7 — 所得 vs 収入 flips verdicts, so the default must be singular and documented.
 - **SourceDocument (要綱)**: `program_id`, `title`, `url`, `fetched_at`, `body`.
@@ -141,7 +143,7 @@ module KyufyCore
     NormalizedRequirement = Struct.new(
       :kind, :operator, :value,                  # per §4 semantics (income = 所得 default)
       :raw_text,
-      :document_ref,                             # index or key into source_documents
+      :document_ref,                             # Integer index into source_documents (0-based). Pinned: not a key/string — adapter authors must not guess.
       keyword_init: true
     )
 
@@ -188,7 +190,7 @@ Input: a `Profile` (see §7 for the exact field definitions), optionally filtere
 0. **Applicability filter (deterministic, never semantic)**: select Programs where
    - `status == active`, AND
    - the date window covers today (`valid_from <= today` or null, `valid_until >= today` or null), AND
-   - geography applies per §4 hierarchy (national ⊃ prefecture ⊃ municipality vs. the Profile's normalized residence), AND
+   - geography applies per §4 hierarchy (national ⊃ prefecture ⊃ municipality vs. the Profile's normalized residence) — **with this carve-out: if residence normalization failed, the geographic clause must NOT exclude anything**; prefecture/municipality programs pass through the filter and their residence-dependent requirements resolve to 要確認 downstream (this is where §7's promise is actually enforced), AND
    - `target` matches, AND category filter if given.
    Excluding an expired/inactive/out-of-area program here is *correct* omission. Nothing else may exclude a program.
 1. **Rule check ALL applicable programs (machine-readable)**: match each Program's Requirements against the Profile → met / not-met / undeterminable. **Semantic retrieval must never gate which programs get assessed** — vector similarity is lossy, and a recall miss here silently violates the prime directive (§0). At MVP scale (3–5 programs) rule-checking everything is trivially cheap; if program counts ever require pre-filtering, that becomes a spec change with an explicit threshold and a 要確認 bucket for filtered-out programs — not a silent drop.
@@ -235,6 +237,7 @@ end
 - This gem holds no auth (the shell handles it). The dummy app may be unauthenticated for MVP.
 ### Log hygiene (mandatory)
 - The engine ships `config/initializers/filter_parameters.rb` adding the Profile fields (`residence`, `prior_year_income_jpy`, `age`, `household_size`, `employment`) to `Rails.application.config.filter_parameters` — Profile is unpersisted, but a POST would otherwise land verbatim in request logs.
+- **Acknowledged tradeoff**: this mutates the host app's global filter list, and generic keys like `age`/`employment` will also mask the host's unrelated params with those names. Over-filtering is the safe direction for this domain, so this is intentional — but it is engine-reaches-into-host behavior; document it in the README so hosts aren't surprised.
 
 ## 8. LLM / embedding abstraction
 - `KyufyCore.configure` allows swapping `llm_adapter`, `embedding_adapter`, and setting `embedding_dim` (see §4).
@@ -245,7 +248,7 @@ end
 ## 9. Testing (minitest)
 - **Unit-test with the two Null adapters**: rule evaluation, aggregation precedence (非該当 > 要確認 > 該当), AND semantics, fail-safe fallback, citation-required behavior — no network.
 - Table tests for the assessment logic (each operator, boundary values, missing-info → needs_review).
-- **Applicability tests**: expired program (valid_until past) excluded; inactive excluded; geo hierarchy (national + matching prefecture + matching municipality all apply; non-matching municipality does not); residence normalization failure → 要確認 not skip.
+- **Applicability tests**: expired program (valid_until past) excluded; inactive excluded; geo hierarchy (national + matching prefecture + matching municipality all apply; non-matching municipality does not); **ward resident matches parent-city program (中央区 11105 → さいたま市 11100)**; **特別区 resident (新宿区 13104) matches 新宿区 + 東京都 + national, and is NOT normalized to any parent city**; residence normalization failure → 要確認 not skip.
 - **Citation-unavailable test**: requirement degrades to 要確認 with `citation_unavailable`, program still present in result.
 - pgvector search: integration test with a small fixed dataset (null embedding adapter).
 - Guarantee by test that **no result ever exposes a raw PK** and **no verdict lacks a citation or a citation_unavailable degradation**.
@@ -259,7 +262,7 @@ end
 - README carries the "参考判定 / confirm with the official window" disclaimer.
 
 ## 11. MVP (2-day hackathon) — minimum to run
-1. Seed 3–5 programs (via ManualYamlAdapter) as Program / Requirement / SourceDocument / DocumentChunk.
+1. Seed 3–5 programs (via ManualYamlAdapter) as Program / Requirement / SourceDocument / DocumentChunk. **Programs are Tokyo-sourced (東京都の給付金・助成金＋国の制度) — the hackathon requires Tokyo open data.** Optionally include one Saitama program to demo cross-municipality generality (switching the Profile's residence flips which programs apply — the public-good pitch in one interaction).
 2. `KyufyCore.assess`: applicability filter → rule-check all → evidence retrieval → (OpenCode or Null) grounding → Result.
 3. Output always contains prefixed IDs + verdict + reasons + citation (or citation_unavailable + 要確認) + official_url + disclaimer.
 4. Mount the JSON API in test/dummy so it demos standalone (no Jumpstart Pro needed).
