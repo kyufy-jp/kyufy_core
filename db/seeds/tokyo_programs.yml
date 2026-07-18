@@ -1,0 +1,41 @@
+# Seed data (§11): Tokyo-sourced program(s) loaded via ManualYamlAdapter -> Importer.
+# The primary demo Profile is a Tokyo 23-ward resident (新宿区), and this 東京都 prefecture-level
+# program applies to any 東京都 resident, so the demo lights up.
+#
+# NOTE: illustrative content for the MVP demo — not an authoritative reproduction of any real
+# program's 要綱. Confirm details at the official window.
+- name: 東京都子育て世帯物価高騰支援給付金
+  authority: 東京都福祉局
+  jurisdiction: prefecture
+  prefecture_code: "13"
+  municipality_code: null
+  category: 給付金
+  target: individual
+  official_url: https://www.fukushi.metro.tokyo.lg.jp/kyufu/bukka-shien
+  valid_from: 2025-04-01
+  valid_until: 2027-03-31
+  status: active
+  source_documents:
+    - title: 東京都子育て世帯物価高騰支援給付金支給要綱
+      url: https://www.fukushi.metro.tokyo.lg.jp/kyufu/bukka-shien/youkou
+      fetched_at: 2026-04-01
+      body: |
+        第1条 この要綱は、物価高騰の影響を受ける子育て世帯の生活を支援するため、
+        東京都子育て世帯物価高騰支援給付金（以下「給付金」という。）の支給に関し
+        必要な事項を定めるものとする。
+        第3条 給付金の支給対象者は、申請日時点で満18歳以上であり、かつ前年の所得が
+        256万円以下である者とする。
+        第4条 給付金の額は、対象者一人につき30,000円とする。
+  requirements:
+    - kind: age
+      operator: gte
+      value:
+        threshold: 18
+      raw_text: 申請日時点で満18歳以上であること。
+      document_ref: 0
+    - kind: income
+      operator: lte
+      value:
+        threshold: 2560000
+      raw_text: 前年の所得が256万円以下であること。
+      document_ref: 0

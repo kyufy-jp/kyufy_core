@@ -51,3 +51,16 @@ yarn-debug.log*
 
 # Local-only docs
 /docs/LOCAL.md
+
+# Bundler install path (kyufy_core: bundle installs into vendor/bundle here)
+/vendor/bundle
+
+# Dummy host app transient files
+/test/dummy/log/*
+!/test/dummy/log/.keep
+/test/dummy/tmp/*
+!/test/dummy/tmp/.keep
+/test/dummy/tmp/pids/*
+!/test/dummy/tmp/pids/.keep
+/test/dummy/db/*.sqlite3
+/test/dummy/storage/*
