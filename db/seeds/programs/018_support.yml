@@ -1,0 +1,39 @@
+# 018サポート — 東京都（給付金, individual, prefecture-scoped）
+# Source (retrieved 2026-07-20): https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018
+# All raw_text values are VERBATIM quotes from the 令和8年度分「対象者について」section.
+# No income requirement — the page states 所得制限はありません.
+- name: 018サポート
+  authority: 東京都福祉局
+  jurisdiction: prefecture
+  prefecture_code: "13"
+  municipality_code: null
+  category: 給付金
+  target: individual
+  official_url: https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018
+  valid_from: 2026-04-01   # 令和8年度分（毎年度実施。valid_until は不定 → null）
+  valid_until: null
+  status: active
+  source_documents:
+    - title: 018サポート（令和8年度分）対象者について
+      url: https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018
+      fetched_at: 2026-07-20
+      body: |
+        018（ゼロイチハチ）サポート（令和8年度も引き続き実施しています）。都内に在住する18歳以下の子供に対し、一人当たり月額5,000円（年額最大6万円）を支給します。
+        対象者について（令和8年度分の申請）：以下のいずれにも該当する子供が対象です。所得制限はありません。
+        1. 0歳から18歳に達する日以後の最初の3月31日までの間にある方
+        2. 令和8年度中に都内に住所を有する又は有していた方（原則）
+        ※各月1日時点の在住状況を確認します。
+  requirements:
+    - kind: age
+      operator: lte
+      value:
+        threshold: 18
+      raw_text: 0歳から18歳に達する日以後の最初の3月31日までの間にある方
+      document_ref: 0
+    - kind: residence
+      operator: eq
+      value:
+        eq: 都内
+        note: 各月1日時点の在住状況を確認（地理フィルタで判定、要確認に degrade）
+      raw_text: 令和8年度中に都内に住所を有する又は有していた方（原則）
+      document_ref: 0

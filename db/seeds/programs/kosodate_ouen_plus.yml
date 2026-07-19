@@ -1,0 +1,36 @@
+# 子育て応援＋（プラス）— 東京都（給付金, individual, prefecture-scoped）
+# Source (retrieved 2026-07-20): https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018
+# raw_text values are VERBATIM from the ●対象者 section.
+- name: 子育て応援＋（プラス）
+  authority: 東京都福祉局
+  jurisdiction: prefecture
+  prefecture_code: "13"
+  municipality_code: null
+  category: 給付金
+  target: individual
+  official_url: https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018
+  valid_from: 2026-02-02   # 令和8年2月2日
+  valid_until: 2027-04-01  # 令和9年4月1日（対象期間の末日）
+  status: active
+  source_documents:
+    - title: 子育て応援＋（プラス）対象者
+      url: https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018
+      fetched_at: 2026-07-20
+      body: |
+        物価高などで実質賃金を圧迫する状況が続く中、子育て世帯を応援するため、東京アプリ生活応援事業の支援対象外である0歳から14歳の子供に対し、1人当たり11,000円を1回支給します。
+        ●対象者：令和8年2月2日～令和9年4月1日の期間内で、0歳から14歳までの都民（生年月日が平成24年4月2日から令和9年4月1日までの間にある者）。ただし、対象期間内に15歳を迎える都民を除く（東京アプリ生活応援事業の支援対象外の都民）。
+        ※上記期間中に出生した方、都内に転入した方、都外へ転出した方も対象となります。
+  requirements:
+    - kind: age
+      operator: lte
+      value:
+        threshold: 14
+        note: 生年月日が平成24年4月2日から令和9年4月1日までの間にある者
+      raw_text: 令和8年2月2日～令和9年4月1日の期間内で、0歳から14歳までの都民
+      document_ref: 0
+    - kind: residence
+      operator: eq
+      value:
+        eq: 都内
+      raw_text: 上記期間中に出生した方、都内に転入した方、都外へ転出した方も対象となります
+      document_ref: 0

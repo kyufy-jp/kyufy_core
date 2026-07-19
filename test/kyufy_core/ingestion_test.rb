@@ -24,6 +24,16 @@ module KyufyCore
       end
     end
 
+    test "import_dir loads every program YAML file in the real-seed directory" do
+      file_count = Dir[File.join(KyufyCore.programs_seed_dir.to_s, "*.yml")].length
+      assert file_count.positive?, "expected packaged real-program YAML files"
+
+      programs = KyufyCore.import_dir
+      assert_equal file_count, programs.size, "one program per file"
+      assert(programs.all? { |p| p.requirements.any? }, "every program has requirements")
+      assert(programs.all? { |p| p.source_documents.first.document_chunks.any? }, "chunked + embedded")
+    end
+
     # This test doubles as executable documentation of the §11 demo: a single profile produces
     # the full spread of verdicts across the seeded programs.
     test "the demo 新宿区 profile produces 該当 / 非該当 / 要確認 across the seed" do

@@ -1,0 +1,31 @@
+# 一般教育訓練給付金 — 国（厚生労働省）（給付金, individual, national）
+# Source (retrieved 2026-07-20): https://www.hellowork.mhlw.go.jp/insurance/insurance_education.html
+# raw_text is VERBATIM from the 一般教育訓練給付金 概要 / （支給対象者）section.
+- name: 一般教育訓練給付金
+  authority: 厚生労働省
+  jurisdiction: national
+  prefecture_code: null
+  municipality_code: null
+  category: 給付金
+  target: individual
+  official_url: https://www.hellowork.mhlw.go.jp/insurance/insurance_education.html
+  valid_from: null   # 恒常的な制度（開始・終了の固定日なし）
+  valid_until: null
+  status: active
+  source_documents:
+    - title: 一般教育訓練給付金 — 支給対象者
+      url: https://www.hellowork.mhlw.go.jp/insurance/insurance_education.html
+      fetched_at: 2026-07-20
+      body: |
+        一般教育訓練給付金は、雇用の安定と再就職の促進を支援するため、一定の条件を満たす雇用保険の被保険者または被保険者であった方（離職者）が、厚生労働大臣の指定する一般教育訓練を受講し、修了した場合は、受講者が支払った教育訓練経費の20％（上限10万円）をハローワークから支給します。
+        （支給対象者）
+        (1) 雇用保険の一般被保険者・高年齢被保険者等：一般教育訓練の受講開始日に、雇用保険に加入していた期間が3年以上
+        (2) 雇用保険の一般被保険者・高年齢被保険者等であった方：雇用保険の資格を喪失した日（離職日の翌日）以降、受講開始日までが1年以内であり、かつ、雇用保険に加入していた期間が3年以上
+  requirements:
+    - kind: employment
+      operator: eq
+      value:
+        eq: employee
+        note: 雇用保険被保険者（=被雇用者）を要件とする。self_employed は 非該当。被保険者期間3年以上（初回は1年以上）は Profile に項目がなく未モデル化。
+      raw_text: 雇用保険の被保険者または被保険者であった方（離職者）
+      document_ref: 0
