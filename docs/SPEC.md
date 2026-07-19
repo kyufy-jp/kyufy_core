@@ -249,7 +249,8 @@ end
 - `KyufyCore.configure` allows swapping `llm_adapter`, `embedding_adapter`, and setting `embedding_dim` (see §4).
 - MVP uses the **OpenCode adapters** (hackathon perk) for both LLM and embeddings.
 - **Tests use NullAdapter (LLM) AND Embedding::NullAdapter** — the latter returns deterministic fake vectors (e.g., seeded hash of the content, fixed dim), so seeding + pgvector integration tests are fast, free, reproducible, and make **zero** network calls. Without a null embedding adapter the "reproducible test suite" claim is false.
-- Model-agnostic by design (mirrors 源内): adapters also allow OpenAI-compatible / local models.
+- Model-agnostic by design (mirrors 源内): adapters also allow OpenAI-compatible / local models. **An Anthropic (Claude) adapter is a planned early addition** — it costs one thin class and buys three things: (1) insurance if OpenCode's output quality proves insufficient (swap = one config line, even the day before the demo), (2) a live demonstration of the model-agnostic claim (switching adapters on stage), (3) the post-hackathon migration target once the free OpenCode perk ends. Verdicts come from rules, not the LLM (§6), so raw model strength is not the deciding factor — pick the runtime adapter by comparing explanation quality on the seed programs, not by benchmark reputation.
+- **Credentials (pinned)**: the Anthropic adapter reads `ENV["KYUFY_ANTHROPIC_API_KEY"]` — a dedicated key, deliberately separate from any tooling key (e.g. `ANTHROPIC_API_KEY` used by Claude Code itself). Live smoke tests are **gated on its presence and skip cleanly without it**; the suite stays green with zero network on machines lacking the key. Keys live in the maintainer's shell environment only — never in any file in this repo.
 
 ## 9. Testing (minitest)
 - **Unit-test with the two Null adapters**: rule evaluation, aggregation precedence (非該当 > 要確認 > 該当), AND semantics, fail-safe fallback, citation-required behavior — no network.
