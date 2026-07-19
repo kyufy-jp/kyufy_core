@@ -36,6 +36,18 @@ module KyufyCore
       end
     end
 
+    test "plain_language: true yields やさしい日本語 explanations" do
+      post "/kyufy_core/assessments", params: {
+        profile: { age: 52, residence: "新宿区", target: "individual", prior_year_income_jpy: 864_000 },
+        plain_language: true
+      }, as: :json
+
+      assert_response :success
+      explanations = JSON.parse(response.body).fetch("assessments")
+        .flat_map { |a| a["reasons"].map { |r| r["explanation"] } }
+      assert(explanations.any? { |e| e.to_s.include?("【やさしい日本語】") })
+    end
+
     test "the response never contains a raw program PK as an id" do
       post "/kyufy_core/assessments", params: {
         profile: { age: 52, residence: "新宿区", target: "individual", prior_year_income_jpy: 864_000 }

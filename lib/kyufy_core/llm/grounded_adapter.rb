@@ -23,8 +23,17 @@ module KyufyCore
         [{"index": <整数>, "explanation": "<説明>"}, ...]
       PROMPT
 
-      def assess_program(program:, items:)
-        explanations = generate_explanations(program, items)
+      # やさしい日本語 variant — for users who find 要綱 wording hard to read.
+      PLAIN_LANGUAGE_SYSTEM_PROMPT = <<~PROMPT.freeze
+        あなたは日本の公的給付制度（給付金・補助金・助成金・手当・控除）の要件判定を説明するアシスタントです。
+        各要件について、要綱の抜粋（raw_text）と機械判定の結果（verdict）に基づき、「やさしい日本語」で説明文を作成してください。
+        むずかしいことばや漢語をさけ、みじかい文で、外国人や子どもにもわかるように書いてください。判定はかえないでください。
+        出力は必ずJSON配列のみとし、前後に文をつけないでください:
+        [{"index": <整数>, "explanation": "<せつめい>"}, ...]
+      PROMPT
+
+      def assess_program(program:, items:, plain_language: false)
+        explanations = generate_explanations(program, items, plain_language)
         items.each_with_index.map do |item, i|
           {
             id: item[:id],
@@ -45,8 +54,9 @@ module KyufyCore
         raise NotImplementedError, "#{self.class} must implement #complete_text"
       end
 
-      def generate_explanations(program, items)
-        text = complete_text(system: SYSTEM_PROMPT, user: user_prompt(program, items))
+      def generate_explanations(program, items, plain_language)
+        system = plain_language ? PLAIN_LANGUAGE_SYSTEM_PROMPT : SYSTEM_PROMPT
+        text = complete_text(system: system, user: user_prompt(program, items))
         parse_explanations(text, items.length)
       end
 

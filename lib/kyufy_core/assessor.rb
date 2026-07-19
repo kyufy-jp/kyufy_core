@@ -12,11 +12,12 @@ module KyufyCore
     # Verdict precedence (§6 step 4): any 非該当 > any 要確認 > all 該当.
     PRECEDENCE = { ineligible: 0, needs_review: 1, eligible: 2 }.freeze
 
-    def initialize(profile:, categories: nil,
+    def initialize(profile:, categories: nil, plain_language: false,
                    llm_adapter: KyufyCore.config.llm_adapter,
                    retriever: Retriever.new)
       @profile = profile
       @categories = Array(categories).reject { |c| c.to_s.strip.empty? }
+      @plain_language = plain_language
       @llm_adapter = llm_adapter
       @retriever = retriever
     end
@@ -95,7 +96,7 @@ module KyufyCore
       items = evaluations.map do |req, rule|
         { id: req.id, kind: req.kind, raw_text: req.raw_text, rule_verdict: RULE_TO_VERDICT.fetch(rule) }
       end
-      llm_adapter.assess_program(program: program, items: items)
+      llm_adapter.assess_program(program: program, items: items, plain_language: @plain_language)
         .to_h { |entry| [ entry[:id], entry[:explanation] ] }
     end
 

@@ -5,7 +5,8 @@ module KyufyCore
     def create
       result = KyufyCore.assess(
         profile: profile_params.to_h,
-        categories: params[:categories]
+        categories: params[:categories],
+        plain_language: ActiveModel::Type::Boolean.new.cast(params[:plain_language])
       )
       render json: { assessments: result.as_json }, status: :ok
     end

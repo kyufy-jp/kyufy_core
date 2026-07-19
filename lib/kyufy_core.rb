@@ -47,10 +47,12 @@ module KyufyCore
     #
     #   KyufyCore.assess(profile: { ... }, categories: %w[給付金 手当 控除])
     #
-    # Returns a KyufyCore::Result. Exposes prefixed IDs only, never raw PKs.
-    def assess(profile:, categories: nil)
+    # Pass `plain_language: true` to have explanations written in やさしい日本語 (easy Japanese)
+    # — for users who find 要綱 wording hard to read. Returns a KyufyCore::Result. Exposes
+    # prefixed IDs only, never raw PKs.
+    def assess(profile:, categories: nil, plain_language: false)
       profile = Profile.wrap(profile)
-      Assessor.new(profile: profile, categories: categories).call
+      Assessor.new(profile: profile, categories: categories, plain_language: plain_language).call
     end
 
     # Packaged Tokyo seed data (§11).

@@ -9,15 +9,16 @@ module KyufyCore
         eligible: "該当", ineligible: "非該当", needs_review: "要確認"
       }.freeze
 
-      def assess_program(program:, items:)
+      def assess_program(program:, items:, plain_language: false)
+        prefix = plain_language ? "【やさしい日本語】" : ""
         items.map do |item|
           label = VERDICT_LABELS.fetch(item[:rule_verdict], "要確認")
           excerpt = item[:raw_text].to_s.strip
           explanation =
             if excerpt.empty?
-              "#{program.name}の要件（#{item[:kind]}）について、根拠となる要綱本文を特定できませんでした。"
+              "#{prefix}#{program.name}の要件（#{item[:kind]}）について、根拠となる要綱本文を特定できませんでした。"
             else
-              "要綱「#{excerpt}」に基づき、#{item[:kind]}の要件を#{label}と判定しました。"
+              "#{prefix}要綱「#{excerpt}」に基づき、#{item[:kind]}の要件を#{label}と判定しました。"
             end
 
           { id: item[:id], verdict: item[:rule_verdict], explanation: explanation }
