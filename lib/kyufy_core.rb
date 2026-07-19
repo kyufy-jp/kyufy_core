@@ -85,5 +85,16 @@ module KyufyCore
       programs = Ingestion::ManualYamlAdapter.from_file(path).fetch_programs
       Ingestion::Importer.new.import(programs)
     end
+
+    # Directory of real, official-source program YAMLs (one program per file).
+    def programs_seed_dir
+      Engine.root.join("db", "seeds", "programs")
+    end
+
+    # Import every *.yml program file in a directory (default: the packaged real-program seed).
+    # Returns all created Programs.
+    def import_dir(dir = programs_seed_dir)
+      Dir[File.join(dir.to_s, "*.yml")].sort.flat_map { |file| import_yaml(file) }
+    end
   end
 end

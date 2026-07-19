@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Real program seed data** (`db/seeds/programs/*.yml`, loaded via `KyufyCore.import_dir`): four
+  programs sourced verbatim from official pages — 018サポート, 子育て応援＋, 杉並区エアコン購入費助成,
+  一般教育訓練給付金. Every `raw_text` is a quote from the official source (see the PR for the
+  verification checklist). The fictional `tokyo_programs.yml` remains the test fixture.
 - **Fully-local model support (privacy)**: the OpenAI-compatible adapters run against a local
   server (Ollama / vLLM / LM Studio) with no code change, keeping PII (所得 / 世帯 / residence)
   on-premises — the same approach as [open-genai](https://github.com/hirokawaguchi/open-genai).

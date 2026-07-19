@@ -1,0 +1,46 @@
+# 杉並区 エアコン購入費助成（助成金, individual, municipality-scoped 13115）
+# Source (retrieved 2026-07-20, page updated 2026-07-17):
+#   https://www.city.suginami.tokyo.jp/s042/news/25347.html
+# raw_text values are VERBATIM from the 「助成の対象について」→ 対象世帯 section.
+- name: 杉並区エアコン購入費助成
+  authority: 杉並区
+  jurisdiction: municipality
+  prefecture_code: "13"
+  municipality_code: "13115"
+  category: 助成金
+  target: individual
+  official_url: https://www.city.suginami.tokyo.jp/s042/news/25347.html
+  valid_from: 2026-06-01   # 交付申請期間 令和8年6月1日〜
+  valid_until: 2026-09-30  # 〜令和8年9月30日【消印有効】
+  status: active
+  source_documents:
+    - title: 杉並区エアコン購入費の助成 — 助成の対象について
+      url: https://www.city.suginami.tokyo.jp/s042/news/25347.html
+      fetched_at: 2026-07-20
+      body: |
+        経済的な理由から自宅用のエアコンの購入が困難な世帯を対象に、夏季の熱中症による健康被害を予防することを目的として、エアコンの購入及び設置に要する費用の一部を助成します。
+        対象世帯：令和7年度もしくは令和8年度の住民税非課税世帯・住民税均等割のみ課税世帯、令和7年度児童扶養手当受給世帯のいずれかに該当し、本事業の申請時において杉並区に住民登録がある世帯で、居住する住宅において以下のいずれかの条件に該当する世帯（生活保護受給世帯を除く）。
+        ・自宅にエアコンが1台もない世帯
+        ・設置されているエアコンの全てが、故障等により冷房機能の使える状態にない世帯、もしくは製造から15年以上経過している世帯（冷房機能の使用可否は問わない）
+        助成内容：区内販売店からの購入の場合、上限100,000円。交付申請期間は令和8年6月1日から9月30日まで。
+  requirements:
+    - kind: income
+      operator: lte
+      value:
+        measure: 住民税非課税
+        note: 住民税非課税/均等割のみ課税世帯、または令和7年度児童扶養手当受給世帯のいずれか（OR）。数値の所得基準は公式ページに記載なし → 要確認に degrade。
+      raw_text: 住民税非課税世帯・住民税均等割のみ課税世帯、令和7年度児童扶養手当受給世帯のいずれかに該当し
+      document_ref: 0
+    - kind: other
+      operator: eq
+      value:
+        eq: 該当
+        note: エアコン未設置 or 冷房不可/製造15年以上（プロフィールから判定不可 → 要確認）
+      raw_text: 自宅にエアコンが1台もない世帯
+      document_ref: 0
+    - kind: residence
+      operator: eq
+      value:
+        eq: 杉並区
+      raw_text: 本事業の申請時において杉並区に住民登録がある世帯
+      document_ref: 0
