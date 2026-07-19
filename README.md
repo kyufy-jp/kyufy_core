@@ -70,6 +70,28 @@ end
 
 Tests run entirely on the two Null adapters — deterministic, free, and zero network calls.
 
+### LLM adapters
+
+The LLM only writes grounded explanations; verdicts always come from the rules, and any API
+failure degrades to a generic explanation rather than breaking an assessment. Two real adapters
+ship:
+
+```ruby
+# Anthropic (Claude). Reads ENV["KYUFY_ANTHROPIC_API_KEY"] — a DEDICATED key, separate from
+# ANTHROPIC_API_KEY. `model:` is configurable (default claude-opus-4-8; e.g. claude-haiku-4-5
+# for lower cost). Requires the `anthropic` gem (loaded lazily).
+c.llm_adapter = KyufyCore::LLM::AnthropicAdapter.new
+
+# OpenAI-compatible (OpenCode / OpenAI / local). Config via ENV: KYUFY_OPENAI_API_KEY,
+# KYUFY_OPENAI_BASE_URL, KYUFY_OPENAI_MODEL. For OpenCode, point base_url + model at its
+# endpoint — no code change. No SDK dependency (Net::HTTP).
+c.llm_adapter = KyufyCore::LLM::OpenAICompatibleAdapter.new
+```
+
+Keys live in the environment only — never in the repo. The Anthropic live smoke test
+(`test/kyufy_core/llm/anthropic_live_smoke_test.rb`) is gated on `KYUFY_ANTHROPIC_API_KEY` and
+skips cleanly when it's absent.
+
 ## Requirements
 
 - Ruby ≥ 3.2 (developed on 4.0.6), Rails ≥ 8.1 (developed on 8.1.3)

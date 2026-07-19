@@ -9,6 +9,10 @@ gem "pg"
 
 gem "propshaft"
 
+# Optional LLM adapter dependency (not a gemspec runtime dep — host apps that use only the
+# Null adapters don't need it). Required lazily by KyufyCore::LLM::AnthropicAdapter.
+gem "anthropic"
+
 # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
 gem "rubocop-rails-omakase", require: false
 
