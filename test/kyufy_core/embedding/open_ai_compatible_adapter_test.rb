@@ -38,6 +38,13 @@ module KyufyCore
         assert_equal [ "A", "B" ], client.last_args[:input], "one batched request"
       end
 
+      test "request_dimensions: false omits the dimensions param (portability for local servers)" do
+        client = FakeEmbeddingClient.new([ [ 0.1, 0.2, 0.3, 0.4 ] ])
+        adapter = OpenAICompatibleAdapter.new(api_key: "test", dim: 4, request_dimensions: false, client: client)
+        adapter.embed("x")
+        assert_nil client.last_args[:dimensions]
+      end
+
       test "embed_all([]) makes no request and returns []" do
         client = FakeEmbeddingClient.new(:should_not_be_called)
         adapter = OpenAICompatibleAdapter.new(api_key: "test", dim: 4, client: client)

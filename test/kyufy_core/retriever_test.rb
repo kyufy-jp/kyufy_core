@@ -31,5 +31,22 @@ module KyufyCore
     test "embedding has the configured dimension" do
       assert_equal KyufyCore.config.embedding_dim, @document.document_chunks.first.embedding.size
     end
+
+    test "max_distance drops chunks too weak to cite (the relevance-rating gate)" do
+      # An exact-text query has distance ~0 to its own chunk; the others are far. A tight
+      # threshold keeps only the exact match.
+      chunks = Retriever.new.evidence_chunks(program: @program, query: "年齢に関する要件", limit: 3, max_distance: 0.01)
+      assert_equal [ "年齢に関する要件" ], chunks.map(&:content)
+    end
+
+    test "a query with no close-enough chunk returns none (-> citation_unavailable)" do
+      chunks = Retriever.new.evidence_chunks(program: @program, query: "全く関係のない語句", limit: 3, max_distance: 0.01)
+      assert_empty chunks
+    end
+
+    test "without a threshold (default) the nearest is returned regardless" do
+      chunks = Retriever.new.evidence_chunks(program: @program, query: "全く関係のない語句", limit: 1, max_distance: nil)
+      assert_equal 1, chunks.length
+    end
   end
 end

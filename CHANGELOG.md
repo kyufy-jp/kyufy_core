@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Fully-local model support (privacy)**: the OpenAI-compatible adapters run against a local
+  server (Ollama / vLLM / LM Studio) with no code change, keeping PII (所得 / 世帯 / residence)
+  on-premises — the same approach as [open-genai](https://github.com/hirokawaguchi/open-genai).
+  The embedding adapter's `dimensions` request param is now optional (`request_dimensions: false`)
+  for local-server portability.
+- **Evidence relevance gate**: `config.evidence_max_distance` drops pgvector fallback chunks whose
+  cosine distance exceeds the threshold, so a weak match degrades to `citation_unavailable` rather
+  than a misleading citation — the relevance-rating step from 源内's `kb_retrieve_and_rating`.
 - **世帯 (household) assessment**: a `Household` value object (members sharing one residence) and
   `KyufyCore.assess_household(household: {...})` / `POST /assessments/household` assess a household
   as a unit — income is summed across members (世帯合算所得) and `household_size` is the member
