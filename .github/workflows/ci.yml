@@ -39,7 +39,9 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        # pgvector image: the engine's migration / structure.sql enable the `vector` extension,
+        # which stock postgres doesn't ship.
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -66,10 +68,17 @@ jobs:
       - name: Run tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
-          # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-          # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare test
+          # Connect the dummy app to the postgres service over TCP. database.yml sets only the
+          # database name; libpq reads these for host/port/credentials.
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        # Two separate invocations: `bin/rails db:test:prepare test` is parsed by the engine's
+        # bin/rails as the command `db:test:prepare` plus an unrecognized command `test`.
+        run: |
+          bin/rails db:test:prepare
+          bin/rails test
 
       - name: Keep screenshots from failed system tests
         uses: actions/upload-artifact@v4
