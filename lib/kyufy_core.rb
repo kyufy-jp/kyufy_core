@@ -55,6 +55,16 @@ module KyufyCore
       Assessor.new(profile: profile, categories: categories, plain_language: plain_language).call
     end
 
+    # Assess several profiles in one call — e.g. every member of a 世帯 (household), or a bulk
+    # backend job. Returns one KyufyCore::Result per profile, in input order. Each profile is
+    # assessed independently (no cross-profile sharing beyond the shared program table), so cost
+    # scales with the number of profiles.
+    def assess_batch(profiles:, categories: nil, plain_language: false)
+      Array(profiles).map do |profile|
+        assess(profile: profile, categories: categories, plain_language: plain_language)
+      end
+    end
+
     # Packaged Tokyo seed data (§11).
     def seed_path
       Engine.root.join("db", "seeds", "tokyo_programs.yml")

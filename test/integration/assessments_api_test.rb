@@ -36,6 +36,20 @@ module KyufyCore
       end
     end
 
+    test "POST /assessments/batch returns one assessment set per profile" do
+      post "/kyufy_core/assessments/batch", params: {
+        profiles: [
+          { age: 52, residence: "新宿区", target: "individual", prior_year_income_jpy: 864_000 },
+          { age: 40, residence: "さいたま市中央区", target: "individual", prior_year_income_jpy: 864_000 }
+        ]
+      }, as: :json
+
+      assert_response :success
+      results = JSON.parse(response.body).fetch("results")
+      assert_equal 2, results.length
+      assert(results.all? { |r| r.key?("assessments") })
+    end
+
     test "plain_language: true yields やさしい日本語 explanations" do
       post "/kyufy_core/assessments", params: {
         profile: { age: 52, residence: "新宿区", target: "individual", prior_year_income_jpy: 864_000 },
