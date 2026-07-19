@@ -170,29 +170,32 @@ end
 kyufy_core                  … Source port + Importer + normalized schema (public, MIT)
 kyufy-adapters (separate)   … concrete adapters:
   ├── ManualYamlAdapter     … hand-written YAML → NormalizedProgram   ← MVP uses ONLY this
-  ├── TokyoCatalogAdapter   … Tokyo Open Data catalog → normalized. **Concretized**: the catalog is CKAN;
-  │                           enter via the CKAN API (`package_search`, then `package_show` for resource
-  │                           CSV URLs) — the HTML UI is CAPTCHA-gated even for humans, the API is the
-  │                           official programmatic route. Discover by SCHEMA, not keyword: filter
-  │                           `fq=tags:自治体標準オープンデータセット` + `res_format=CSV` for the "支援制度"
-  │                           dataset (Digital Agency's nationwide common format; Nakano/Koganei/
-  │                           Higashimurayama publish it, CC BY) — one adapter reaches every municipality
-  │                           on the standard. `q=給付金` alone is noisy (322 hits mixing ad-hoc HTML
-  │                           resources); the adapter must skip non-conforming resources. The CSV's 対象
-  │                           column is prose → structure it via LlmExtractionAdapter used as a decorator
-  │                           (below).
+  ├── TokyoCatalogAdapter   … Tokyo Open Data catalog → normalized. **Concretized (API verified live)**:
+  │                           the catalog is CKAN; enter via the CKAN API (`package_search`, then
+  │                           `package_show` for resource CSV URLs) — the HTML UI is CAPTCHA-gated even
+  │                           for humans (maintainer-observed), the API is the official programmatic route.
+  │                           **Discovery targets the schema, not keywords**: primary query filters on
+  │                           tags:自治体標準オープンデータセット + format:CSV + the 支援制度 dataset-name
+  │                           pattern (keyword q=給付金 returns ~322 mixed results incl. ad-hoc HTML
+  │                           resources — use it only as fallback). Skip non-conforming resources; only
+  │                           standard-schema CSVs have the known column set. The standard is Digital
+  │                           Agency's nationwide common format (Nakano/Koganei/Higashimurayama confirmed
+  │                           publishing it, CC BY-4.0) — one adapter reaches every municipality
+  │                           publishing the standard. The CSV's 対象 column is prose → left as a
+  │                           NormalizedDocument body with requirements empty; see LlmExtractionAdapter.
   ├── SaitamaCityAdapter    … municipality HTML/PDF scrape → normalized
-  └── LlmExtractionAdapter  … generic: LLM reads 要綱 text → drafts NormalizedProgram, human reviews &
-                              confirms (源内-style doc×LLM, applied to ingestion). Composes as a DECORATOR
-                              over any Source: `LlmExtractionAdapter.new(inner_source)` reads the inner
-                              adapter's NormalizedPrograms (対象 prose sitting in a NormalizedDocument
-                              body) and returns them with `requirements` filled. Both are Sources, so the
-                              port and the Importer stay unchanged — no new pipeline stage in kyufy_core.
+  └── LlmExtractionAdapter  … generic, and **a decorator over any Source, not a peer**:
+                              `LlmExtractionAdapter.new(inner_source)` calls the inner adapter's
+                              fetch_programs, reads each NormalizedProgram whose requirements are
+                              empty/prose-only (the 対象 text sits in a NormalizedDocument body),
+                              has the LLM draft the NormalizedRequirements, and returns the enriched
+                              programs. Human reviews & confirms before import (源内-style doc×LLM).
+                              Both stay Sources; the outer wraps the inner; kyufy_core's port and
+                              Importer need zero changes — composition without a new seam.
 ```
 (Exception: a minimal `ManualYamlAdapter` ships inside this gem's test/seed support, since the seed needs it.)
-(Licensing: catalog data is CC BY. Runtime ingestion preserves attribution via `source_document.url` /
-`official_url`; if an adapter or seed ever **bundles** the CSV-derived data, add an explicit source + CC BY
-credit.)
+
+**CC BY attribution**: runtime ingestion already satisfies attribution (official_url / source_document.url are preserved and surfaced). But if kyufy-adapters or any seed **bundles/commits CSV-derived data into a repo**, CC BY requires an explicit source + license credit in that repo (a NOTICE/README line naming the dataset, municipality, and CC BY-4.0).
 
 Why outside the gem:
 1. **Matches the business model**: "engine = free public good; writing/maintaining YOUR municipality's adapter = the paid service." The Open Core split is enforced by the code structure itself.
