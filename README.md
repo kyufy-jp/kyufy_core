@@ -140,6 +140,35 @@ adapters (base URL + key + model). The live smoke test
 (`test/kyufy_core/embedding/open_ai_compatible_live_smoke_test.rb`) is gated on
 `KYUFY_OPENAI_API_KEY` and skips cleanly without it.
 
+### Fully local models (privacy)
+
+kyufy assesses PII — 所得, 世帯, residence. Pointing the OpenAI-compatible adapters at a **local**
+server (Ollama / vLLM / LM Studio) keeps that data on-premises: nothing leaves the machine. This
+is the same fully-local approach as [open-genai](https://github.com/hirokawaguchi/open-genai) (a
+local build of 源内), and it's a config change, not a code change:
+
+```ruby
+KyufyCore.configure do |c|
+  c.llm_adapter       = KyufyCore::LLM::OpenAICompatibleAdapter.new
+  c.embedding_adapter = KyufyCore::Embedding::OpenAICompatibleAdapter.new(request_dimensions: false)
+  c.embedding_dim     = 1024   # e.g. mxbai-embed-large is 1024-dim, not OpenAI's 1536
+end
+# ENV: KYUFY_OPENAI_BASE_URL=http://localhost:11434/v1  KYUFY_OPENAI_API_KEY=ollama
+#      KYUFY_OPENAI_MODEL=qwen2.5:7b   KYUFY_OPENAI_EMBEDDING_MODEL=mxbai-embed-large
+```
+
+Local embedding models have their own dimension — set `embedding_dim` (and the migration's
+`vector(N)`) to match. The embedding adapter validates the returned length, so a mismatch fails
+loudly. `request_dimensions: false` omits OpenAI's `dimensions` param, which local servers ignore
+or reject.
+
+### Evidence relevance gate
+
+`config.evidence_max_distance` (default `nil` = off) drops pgvector fallback chunks whose cosine
+distance to the query exceeds the threshold, so a weak match becomes `citation_unavailable`
+(→ 要確認) rather than a misleading citation — the relevance-rating step from 源内's
+`kb_retrieve_and_rating`. Set e.g. `0.5` with a real embedding model.
+
 ## Requirements
 
 - Ruby ≥ 3.2 (developed on 4.0.6), Rails ≥ 8.1 (developed on 8.1.3)
@@ -163,7 +192,13 @@ so it's intentional — but hosts should be aware.
 
 ## References
 
-- 源内 / genai-ai-api — Digital Agency administrative RAG (the design lineage).
+- [源内 / genai-ai-api](https://github.com/digital-go-jp/genai-ai-api) — Digital Agency's
+  administrative RAG (MIT), the design lineage. kyufy follows its "answer grounded in cited source
+  text" pattern (query → retrieve-and-rate → answer → reference), diverging deliberately: citations
+  are authoritative 要綱 excerpts curated at ingestion (not query-time retrieval), and verdicts come
+  from rules, not the LLM.
+- [open-genai](https://github.com/hirokawaguchi/open-genai) — a fully-local build of 源内
+  (Ollama / OpenAI-compatible, MIT); the local-model deploy above mirrors its approach.
 - [pgvector](https://github.com/pgvector/pgvector), [neighbor](https://github.com/ankane/neighbor),
   [prefixed_ids](https://github.com/excid3/prefixed_ids).
 

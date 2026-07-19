@@ -20,15 +20,21 @@ module KyufyCore
       OPEN_TIMEOUT = 10
       READ_TIMEOUT = 60
 
+      # `request_dimensions` sends OpenAI's `dimensions` truncation param. Real OpenAI
+      # text-embedding-3 models honor it; local servers (Ollama, etc.) don't, and some reject
+      # unknown fields — set it false there. The returned length is validated against `dim`
+      # either way, so a native-dimension mismatch still fails loudly.
       def initialize(api_key: ENV["KYUFY_OPENAI_API_KEY"],
                      base_url: ENV["KYUFY_OPENAI_BASE_URL"] || DEFAULT_BASE_URL,
                      model: ENV["KYUFY_OPENAI_EMBEDDING_MODEL"] || DEFAULT_MODEL,
                      dim: KyufyCore.config.embedding_dim,
+                     request_dimensions: true,
                      client: nil)
         super(dim: dim)
         @api_key = api_key
         @base_url = base_url
         @model = model
+        @request_dimensions = request_dimensions
         @client = client
       end
 
@@ -41,7 +47,7 @@ module KyufyCore
       def embed_all(texts)
         return [] if texts.empty?
 
-        vectors = client.embed(model: @model, input: Array(texts), dimensions: dim)
+        vectors = client.embed(model: @model, input: Array(texts), dimensions: (@request_dimensions ? dim : nil))
         vectors.each do |vector|
           unless vector.is_a?(Array) && vector.length == dim
             raise KyufyCore::Error,
@@ -75,7 +81,9 @@ module KyufyCore
           request = Net::HTTP::Post.new(uri)
           request["Authorization"] = "Bearer #{@api_key}"
           request["Content-Type"] = "application/json"
-          request.body = JSON.generate(model: model, input: input, dimensions: dimensions)
+          body = { model: model, input: input }
+          body[:dimensions] = dimensions unless dimensions.nil?
+          request.body = JSON.generate(body)
 
           response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
                                      open_timeout: OPEN_TIMEOUT, read_timeout: READ_TIMEOUT) do |http|
