@@ -8,9 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Batch / household assessment**: `KyufyCore.assess_batch(profiles: [...])` and a
-  `POST /assessments/batch` endpoint assess several profiles (e.g. a whole 世帯, or a bulk backend
-  job) in one call, returning one result set per profile in input order.
+- **世帯 (household) assessment**: a `Household` value object (members sharing one residence) and
+  `KyufyCore.assess_household(household: {...})` / `POST /assessments/household` assess a household
+  as a unit — income is summed across members (世帯合算所得) and `household_size` is the member
+  count, which is how most Japanese 給付金 gate eligibility. Members must share a residence (the
+  "different residence" mistake is now an explicit error). Per-member attributes (age, employment)
+  aren't household facts, so they resolve to 要確認; per-member eligibility stays with `assess_batch`.
+- **Batch assessment**: `KyufyCore.assess_batch(profiles: [...])` and a `POST /assessments/batch`
+  endpoint assess several profiles (e.g. each household member for individual benefits, or a bulk
+  backend job) in one call, returning one result set per profile in input order.
 - **やさしい日本語 (easy-Japanese) toggle**: `KyufyCore.assess(..., plain_language: true)` (and a
   `plain_language` JSON API param) writes explanations in plain Japanese for users who find 要綱
   wording hard to read. Threaded through the LLM adapter contract; verdicts are unaffected.

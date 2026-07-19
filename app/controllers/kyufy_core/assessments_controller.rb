@@ -14,7 +14,7 @@ module KyufyCore
     end
 
     # POST /assessments/batch with `profiles: [ {...}, {...} ]` returns one assessment set per
-    # profile (e.g. a whole 世帯), in input order.
+    # profile (e.g. each member of a 世帯 assessed for individual benefits), in input order.
     def batch
       results = KyufyCore.assess_batch(
         profiles: batch_profile_params,
@@ -22,6 +22,17 @@ module KyufyCore
         plain_language: plain_language_param
       )
       render json: { results: results.map { |result| { assessments: result.as_json } } }, status: :ok
+    end
+
+    # POST /assessments/household with `members: [ {...}, {...} ]` assesses the 世帯 as a unit
+    # (income summed across members). Returns one assessment set for the household.
+    def household
+      result = KyufyCore.assess_household(
+        household: { members: batch_member_params },
+        categories: params[:categories],
+        plain_language: plain_language_param
+      )
+      render json: { assessments: result.as_json }, status: :ok
     end
 
     private
@@ -32,6 +43,10 @@ module KyufyCore
 
     def batch_profile_params
       Array(params[:profiles]).map { |profile| profile.permit(*PROFILE_FIELDS).to_h }
+    end
+
+    def batch_member_params
+      Array(params[:members]).map { |member| member.permit(*PROFILE_FIELDS).to_h }
     end
 
     def plain_language_param

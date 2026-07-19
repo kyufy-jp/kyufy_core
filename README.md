@@ -51,12 +51,27 @@ result.each do |program_result|
 end
 ```
 
-### Batch / household assessment
+### 世帯 (household) assessment
+
+Many Japanese benefits are assessed at the household level — income is summed across members
+(世帯合算所得). Members share one residence (a mixed-residence household is rejected):
+
+```ruby
+result = KyufyCore.assess_household(
+  household: { members: [ you, mother, father ] },  # or a bare array of members
+  categories: %w[給付金 手当],
+  plain_language: false
+)
+# => a single KyufyCore::Result; income summed, household_size = member count.
+# Per-member attributes (age, employment) resolve to 要確認 — use assess_batch for those.
+```
+
+### Batch assessment (per-member / bulk)
 
 ```ruby
 results = KyufyCore.assess_batch(
-  profiles: [ member_a, member_b, member_c ],   # e.g. a whole 世帯
-  categories: %w[給付金 手当],                   # optional
+  profiles: [ member_a, member_b, member_c ],   # each assessed individually
+  categories: %w[給付金 手当],
   plain_language: false
 )
 # => one KyufyCore::Result per profile, in input order
@@ -65,8 +80,9 @@ results = KyufyCore.assess_batch(
 ### JSON API (optional mount)
 
 ```
-POST /kyufy_core/assessments          # single profile
-POST /kyufy_core/assessments/batch    # { profiles: [ {...}, {...} ] } -> { results: [...] }
+POST /kyufy_core/assessments            # single profile
+POST /kyufy_core/assessments/batch      # { profiles: [ {...}, {...} ] } -> { results: [...] }
+POST /kyufy_core/assessments/household  # { members: [ {...}, {...} ] } -> { assessments: [...] }
 ```
 with a `profile` (and optional `categories`, and `plain_language: true` for やさしい日本語
 explanations) returns the JSON mirror of the Ruby result — prefixed IDs only. This gem holds no

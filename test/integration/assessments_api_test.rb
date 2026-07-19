@@ -50,6 +50,23 @@ module KyufyCore
       assert(results.all? { |r| r.key?("assessments") })
     end
 
+    test "POST /assessments/household assesses the 世帯 as a unit (income summed)" do
+      post "/kyufy_core/assessments/household", params: {
+        members: [
+          { age: 80, residence: "新宿区", target: "individual", prior_year_income_jpy: 500_000 },
+          { age: 52, residence: "新宿区", target: "individual", prior_year_income_jpy: 1_000_000 }
+        ]
+      }, as: :json
+
+      assert_response :success
+      body = JSON.parse(response.body)
+      assert body.key?("assessments")
+      # The seeded prefecture program has an income requirement (<= 2,560,000). Summed household
+      # income is 1,500,000, so the income reason is satisfied (not ineligible).
+      income_reasons = body["assessments"].flat_map { |a| a["reasons"] }.select { |r| r["kind"] == "income" }
+      assert(income_reasons.none? { |r| r["verdict"] == "ineligible" })
+    end
+
     test "plain_language: true yields やさしい日本語 explanations" do
       post "/kyufy_core/assessments", params: {
         profile: { age: 52, residence: "新宿区", target: "individual", prior_year_income_jpy: 864_000 },
