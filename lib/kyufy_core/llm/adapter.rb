@@ -11,9 +11,12 @@ module KyufyCore
     # :explanation. It MAY echo a :verdict, but the rule's verdict wins for anything the rule
     # already decided, and undeterminable requirements stay 要確認 (fail-safe) — so the
     # explanation is the adapter's real job here.
+    #
+    # When `plain_language: true`, explanations should be written in やさしい日本語 (easy
+    # Japanese) for users who find 要綱 wording hard to read.
     class Adapter
       # @return [Array<Hash{id:, verdict:, explanation:}>]
-      def assess_program(program:, items:)
+      def assess_program(program:, items:, plain_language: false)
         raise NotImplementedError, "#{self.class} must implement #assess_program"
       end
     end

@@ -39,7 +39,8 @@ result = KyufyCore.assess(
     employment: "self_employed",
     target: "individual"
   },
-  categories: %w[給付金 手当 控除]      # optional
+  categories: %w[給付金 手当 控除],     # optional
+  plain_language: false                 # true → explanations in やさしい日本語 (easy Japanese)
 )
 
 result.each do |program_result|
@@ -55,8 +56,9 @@ end
 ```
 POST /kyufy_core/assessments
 ```
-with a `profile` (and optional `categories`) returns the JSON mirror of the Ruby result —
-prefixed IDs only. This gem holds no auth; the host shell provides it.
+with a `profile` (and optional `categories`, and `plain_language: true` for やさしい日本語
+explanations) returns the JSON mirror of the Ruby result — prefixed IDs only. This gem holds no
+auth; the host shell provides it.
 
 ## Configuration
 

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **やさしい日本語 (easy-Japanese) toggle**: `KyufyCore.assess(..., plain_language: true)` (and a
+  `plain_language` JSON API param) writes explanations in plain Japanese for users who find 要綱
+  wording hard to read. Threaded through the LLM adapter contract; verdicts are unaffected.
 - Mountable Rails Engine scaffold (`KyufyCore`) targeting Rails 8.1 / Ruby 4.0, with a
   `test/dummy` host app that demos the engine standalone.
 - pgvector migration: `Program` / `Requirement` / `SourceDocument` / `DocumentChunk` tables,

@@ -69,6 +69,14 @@ module KyufyCore
         assert_equal 2, result.length
         assert(result.all? { |r| r[:explanation].to_s.length.positive? })
       end
+
+      test "plain_language selects the やさしい日本語 system prompt" do
+        adapter = StubGrounded.new("[]")
+        adapter.assess_program(program: program, items: items, plain_language: true)
+        assert_equal GroundedAdapter::PLAIN_LANGUAGE_SYSTEM_PROMPT, adapter.seen_system
+        adapter.assess_program(program: program, items: items, plain_language: false)
+        assert_equal GroundedAdapter::SYSTEM_PROMPT, adapter.seen_system
+      end
     end
   end
 end
