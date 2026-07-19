@@ -7,6 +7,7 @@ require "kyufy_core/engine"
 require "kyufy_core/configuration"
 require "kyufy_core/geo"
 require "kyufy_core/profile"
+require "kyufy_core/household"
 require "kyufy_core/result"
 require "kyufy_core/llm/adapter"
 require "kyufy_core/llm/null_adapter"
@@ -63,6 +64,15 @@ module KyufyCore
       Array(profiles).map do |profile|
         assess(profile: profile, categories: categories, plain_language: plain_language)
       end
+    end
+
+    # Assess a 世帯 (household) as a unit against household-level programs. Income is summed
+    # across members (世帯合算所得) and household_size is the member count — this is how most
+    # Japanese 給付金 gate eligibility. Returns a single KyufyCore::Result for the household.
+    # For per-member (individual) eligibility, use assess_batch instead.
+    def assess_household(household:, categories: nil, plain_language: false)
+      household = Household.wrap(household)
+      assess(profile: household.to_profile, categories: categories, plain_language: plain_language)
     end
 
     # Packaged Tokyo seed data (§11).
