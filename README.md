@@ -1,0 +1,125 @@
+# kyufy_core
+
+**kyufy-core is the open-source assessment engine** behind kyufy: it takes a user's situation
+(a *profile*) and a program's requirements and returns **該当 / 非該当 / 要確認**
+(*eligible / ineligible / needs-review*) with **cited evidence** — a short quoted excerpt from
+the 要綱 plus the official source URL — so people don't miss the Japanese public money
+(給付金・補助金・助成金・手当・控除) they're entitled to.
+
+It is a Rails reimplementation of the structure of Digital Agency's **源内** (genai-ai-api)
+administrative / legal-reference RAG, following the "answer grounded in cited source text"
+pattern.
+
+> **これは参考判定です。最終確認は各制度の公式窓口で行ってください。**
+> This is a reference assessment only. Always confirm at each program's official window.
+
+## What's in this gem (the open core)
+
+- Data models for programs (制度) and requirements (要件), with the exact 要綱 excerpt kept
+  alongside each machine-readable condition.
+- Chunking, embedding, and pgvector search of 要綱 text — used **for evidence**, never to gate
+  which programs get assessed.
+- The `Assessor`: applicability filter → rule check → grounded LLM judgement → aggregation,
+  with fail-safe defaults (ambiguity → 要確認, never a loose 該当).
+- Swappable **LLM** and **embedding** adapters (OpenCode / OpenAI-compatible / local /
+  null-for-test).
+- A `Result` value object and an optional mountable JSON API.
+
+Auth, billing, and commercial UI live in a separate host ("shell") app — not here.
+
+## Usage
+
+```ruby
+result = KyufyCore.assess(
+  profile: {
+    age: 52,
+    residence: "新宿区",              # free text; normalized to JIS codes internally
+    household_size: 3,
+    prior_year_income_jpy: 864_000,   # 所得 (net/taxable), prior year — NOT 収入 (gross)
+    employment: "self_employed",
+    target: "individual"
+  },
+  categories: %w[給付金 手当 控除]      # optional
+)
+
+result.each do |program_result|
+  program_result.program_id     # "prog_…" — a prefixed id, never a raw PK
+  program_result.verdict        # :eligible / :ineligible / :needs_review
+  program_result.reasons        # [{ requirement_id:, kind:, verdict:, explanation:, citation:, source_url:, ... }]
+  program_result.disclaimer
+end
+```
+
+### JSON API (optional mount)
+
+```
+POST /kyufy_core/assessments
+```
+with a `profile` (and optional `categories`) returns the JSON mirror of the Ruby result —
+prefixed IDs only. This gem holds no auth; the host shell provides it.
+
+## Configuration
+
+```ruby
+KyufyCore.configure do |c|
+  c.llm_adapter       = MyLLMAdapter.new         # default: KyufyCore::LLM::NullAdapter
+  c.embedding_adapter = MyEmbeddingAdapter.new   # default: KyufyCore::Embedding::NullAdapter
+  c.embedding_dim     = 1536                      # must match the migration
+end
+```
+
+Tests run entirely on the two Null adapters — deterministic, free, and zero network calls.
+
+### LLM adapters
+
+The LLM only writes grounded explanations; verdicts always come from the rules, and any API
+failure degrades to a generic explanation rather than breaking an assessment. Two real adapters
+ship:
+
+```ruby
+# Anthropic (Claude). Reads ENV["KYUFY_ANTHROPIC_API_KEY"] — a DEDICATED key, separate from
+# ANTHROPIC_API_KEY. `model:` is configurable (default claude-opus-4-8; e.g. claude-haiku-4-5
+# for lower cost). Requires the `anthropic` gem (loaded lazily).
+c.llm_adapter = KyufyCore::LLM::AnthropicAdapter.new
+
+# OpenAI-compatible (OpenCode / OpenAI / local). Config via ENV: KYUFY_OPENAI_API_KEY,
+# KYUFY_OPENAI_BASE_URL, KYUFY_OPENAI_MODEL. For OpenCode, point base_url + model at its
+# endpoint — no code change. No SDK dependency (Net::HTTP).
+c.llm_adapter = KyufyCore::LLM::OpenAICompatibleAdapter.new
+```
+
+Keys live in the environment only — never in the repo. The Anthropic live smoke test
+(`test/kyufy_core/llm/anthropic_live_smoke_test.rb`) is gated on `KYUFY_ANTHROPIC_API_KEY` and
+skips cleanly when it's absent.
+
+## Requirements
+
+- Ruby ≥ 3.2 (developed on 4.0.6), Rails ≥ 8.1 (developed on 8.1.3)
+- PostgreSQL with the [pgvector](https://github.com/pgvector/pgvector) extension
+
+## Development
+
+```bash
+bin/rails db:prepare      # in test/dummy, via RAILS_ENV
+bin/rails test            # full suite on the Null adapters
+```
+
+## Log hygiene note for host apps
+
+The engine ships `config/initializers/filter_parameters.rb`, which appends the Profile fields
+(`residence`, `prior_year_income_jpy`, `age`, `household_size`, `employment`) to the host app's
+`config.filter_parameters` so a profile POST never lands verbatim in request logs. This mutates
+the host's **global** filter list, so generic keys like `age` / `employment` will also mask the
+host's unrelated params of the same name. Over-filtering is the safe direction for this domain,
+so it's intentional — but hosts should be aware.
+
+## References
+
+- 源内 / genai-ai-api — Digital Agency administrative RAG (the design lineage).
+- [pgvector](https://github.com/pgvector/pgvector), [neighbor](https://github.com/ankane/neighbor),
+  [prefixed_ids](https://github.com/excid3/prefixed_ids).
+
+## License
+
+MIT. This gem contains no Jumpstart Pro code (paid, non-redistributable) and no Tailwind Plus
+code (this gem is UI-free by design).

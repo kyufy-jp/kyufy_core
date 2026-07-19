@@ -1,0 +1,158 @@
+# Seed data (§11): a small, realistic multi-program set loaded via ManualYamlAdapter -> Importer.
+# Primary demo Profile is a Tokyo 23-ward resident (新宿区); one Saitama program lets the demo
+# switch residence to さいたま市中央区 and show cross-municipality generality in one interaction.
+#
+# For the demo Profile { age: 52, residence: "新宿区", household_size: 3,
+#   prior_year_income_jpy: 864_000, employment: "self_employed", target: "individual" } this set
+# yields the full spread of verdicts:
+#   国 定額減税            -> 該当   (national, always applies)
+#   東京都 給付金          -> 該当   (prefecture 13 matches)
+#   新宿区 高齢者助成      -> 非該当 (age 52 < 65)
+#   新宿区 就学援助        -> 要確認 (a requirement the Profile can't determine)
+#   さいたま市 給付金      -> excluded (different prefecture; appears if residence -> さいたま市…)
+#
+# NOTE: illustrative content for the MVP demo — NOT an authoritative reproduction of any real
+# program's 要綱. Confirm details at each official window.
+
+- name: 定額減税（所得税・個人住民税）
+  authority: 国税庁
+  jurisdiction: national
+  prefecture_code: null
+  municipality_code: null
+  category: 控除
+  target: individual
+  official_url: https://www.nta.go.jp/teigakugenzei
+  valid_from: 2024-06-01
+  valid_until: 2027-03-31
+  status: active
+  source_documents:
+    - title: 定額減税の概要
+      url: https://www.nta.go.jp/teigakugenzei/gaiyo
+      fetched_at: 2026-04-01
+      body: |
+        令和6年分の所得税及び個人住民税について、定額による特別税額控除（定額減税）が
+        実施される。対象は、前年の合計所得金額が1,805万円以下である居住者とする。
+  requirements:
+    - kind: income
+      operator: lte
+      value:
+        threshold: 18050000
+      raw_text: 前年の合計所得金額が1,805万円以下である居住者であること。
+      document_ref: 0
+
+- name: 東京都子育て世帯物価高騰支援給付金
+  authority: 東京都福祉局
+  jurisdiction: prefecture
+  prefecture_code: "13"
+  municipality_code: null
+  category: 給付金
+  target: individual
+  official_url: https://www.fukushi.metro.tokyo.lg.jp/kyufu/bukka-shien
+  valid_from: 2025-04-01
+  valid_until: 2027-03-31
+  status: active
+  source_documents:
+    - title: 東京都子育て世帯物価高騰支援給付金支給要綱
+      url: https://www.fukushi.metro.tokyo.lg.jp/kyufu/bukka-shien/youkou
+      fetched_at: 2026-04-01
+      body: |
+        第3条 給付金の支給対象者は、申請日時点で満18歳以上であり、かつ前年の所得が
+        256万円以下である者とする。
+        第4条 給付金の額は、対象者一人につき30,000円とする。
+  requirements:
+    - kind: age
+      operator: gte
+      value:
+        threshold: 18
+      raw_text: 申請日時点で満18歳以上であること。
+      document_ref: 0
+    - kind: income
+      operator: lte
+      value:
+        threshold: 2560000
+      raw_text: 前年の所得が256万円以下であること。
+      document_ref: 0
+
+- name: 新宿区高齢者福祉タクシー利用助成
+  authority: 新宿区福祉部
+  jurisdiction: municipality
+  prefecture_code: "13"
+  municipality_code: "13104"
+  category: 助成金
+  target: individual
+  official_url: https://www.city.shinjuku.lg.jp/fukushi/koreisha-taxi
+  valid_from: 2025-04-01
+  valid_until: null
+  status: active
+  source_documents:
+    - title: 新宿区高齢者福祉タクシー利用助成事業実施要綱
+      url: https://www.city.shinjuku.lg.jp/fukushi/koreisha-taxi/youkou
+      fetched_at: 2026-04-01
+      body: |
+        第2条 この助成の対象者は、区内に住所を有する満65歳以上の高齢者であって、
+        歩行が困難なものとする。
+  requirements:
+    - kind: age
+      operator: gte
+      value:
+        threshold: 65
+      raw_text: 満65歳以上の高齢者であること。
+      document_ref: 0
+
+- name: 新宿区就学援助
+  authority: 新宿区教育委員会
+  jurisdiction: municipality
+  prefecture_code: "13"
+  municipality_code: "13104"
+  category: 給付金
+  target: individual
+  official_url: https://www.city.shinjuku.lg.jp/kyoiku/shugaku-enjo
+  valid_from: 2025-04-01
+  valid_until: null
+  status: active
+  source_documents:
+    - title: 新宿区就学援助費支給要綱
+      url: https://www.city.shinjuku.lg.jp/kyoiku/shugaku-enjo/youkou
+      fetched_at: 2026-04-01
+      body: |
+        第2条 就学援助費の支給対象は、区内に住所を有し、区立学校に就学する児童又は
+        生徒を養育する保護者であって、前年の所得が基準額以下であるものとする。
+  requirements:
+    - kind: income
+      operator: lte
+      value:
+        threshold: 3000000
+      raw_text: 前年の所得が基準額以下であること。
+      document_ref: 0
+    - kind: other
+      operator: gte
+      value:
+        threshold: 1
+      raw_text: 区立学校に就学する児童又は生徒を養育していること。
+      document_ref: 0
+
+- name: さいたま市子育て応援給付金
+  authority: さいたま市子ども未来局
+  jurisdiction: municipality
+  prefecture_code: "11"
+  municipality_code: "11100"
+  category: 給付金
+  target: individual
+  official_url: https://www.city.saitama.lg.jp/kosodate/ouen-kyufu
+  valid_from: 2025-04-01
+  valid_until: 2027-03-31
+  status: active
+  source_documents:
+    - title: さいたま市子育て応援給付金支給要綱
+      url: https://www.city.saitama.lg.jp/kosodate/ouen-kyufu/youkou
+      fetched_at: 2026-04-01
+      body: |
+        第3条 給付金の支給対象者は、基準日において本市に住所を有し、かつ前年の所得が
+        360万円以下である子育て世帯とする。
+  requirements:
+    - kind: income
+      operator: lte
+      value:
+        threshold: 3600000
+      raw_text: 前年の所得が360万円以下であること。
+      document_ref: 0
