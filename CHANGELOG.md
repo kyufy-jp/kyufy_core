@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Batch / household assessment**: `KyufyCore.assess_batch(profiles: [...])` and a
+  `POST /assessments/batch` endpoint assess several profiles (e.g. a whole 世帯, or a bulk backend
+  job) in one call, returning one result set per profile in input order.
 - **やさしい日本語 (easy-Japanese) toggle**: `KyufyCore.assess(..., plain_language: true)` (and a
   `plain_language` JSON API param) writes explanations in plain Japanese for users who find 要綱
   wording hard to read. Threaded through the LLM adapter contract; verdicts are unaffected.

@@ -51,10 +51,22 @@ result.each do |program_result|
 end
 ```
 
+### Batch / household assessment
+
+```ruby
+results = KyufyCore.assess_batch(
+  profiles: [ member_a, member_b, member_c ],   # e.g. a whole 世帯
+  categories: %w[給付金 手当],                   # optional
+  plain_language: false
+)
+# => one KyufyCore::Result per profile, in input order
+```
+
 ### JSON API (optional mount)
 
 ```
-POST /kyufy_core/assessments
+POST /kyufy_core/assessments          # single profile
+POST /kyufy_core/assessments/batch    # { profiles: [ {...}, {...} ] } -> { results: [...] }
 ```
 with a `profile` (and optional `categories`, and `plain_language: true` for やさしい日本語
 explanations) returns the JSON mirror of the Ruby result — prefixed IDs only. This gem holds no
