@@ -92,6 +92,24 @@ Keys live in the environment only — never in the repo. The Anthropic live smok
 (`test/kyufy_core/llm/anthropic_live_smoke_test.rb`) is gated on `KYUFY_ANTHROPIC_API_KEY` and
 skips cleanly when it's absent.
 
+### Embedding adapters
+
+Semantic retrieval of 要綱 chunks (§6 evidence lookup) needs real vector embeddings:
+
+```ruby
+# OpenAI-compatible (OpenCode / OpenAI / local). Config via ENV: KYUFY_OPENAI_API_KEY,
+# KYUFY_OPENAI_BASE_URL, KYUFY_OPENAI_EMBEDDING_MODEL. The returned dimension is validated
+# against `embedding_dim` (and the vector() column width), so a model/column mismatch fails
+# loudly. No SDK dependency (Net::HTTP).
+c.embedding_adapter = KyufyCore::Embedding::OpenAICompatibleAdapter.new
+```
+
+Note: Anthropic has no embeddings API, so embeddings run through an OpenAI-compatible endpoint.
+When the OpenCode key arrives it's a single config swap for **both** the LLM and embedding
+adapters (base URL + key + model). The live smoke test
+(`test/kyufy_core/embedding/open_ai_compatible_live_smoke_test.rb`) is gated on
+`KYUFY_OPENAI_API_KEY` and skips cleanly without it.
+
 ## Requirements
 
 - Ruby ≥ 3.2 (developed on 4.0.6), Rails ≥ 8.1 (developed on 8.1.3)

@@ -26,9 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Profile` and `Result` value objects, `KyufyCore.assess`, an optional mountable JSON API
   (`POST /assessments`), and a `filter_parameters` initializer for log hygiene.
 - Deterministic, no-network Null adapters for both LLM and embeddings (the test default).
-- `AnthropicAdapter` (Claude Messages API) and `OpenAICompatibleAdapter` (`/chat/completions`,
-  the OpenCode config-swap path) — grounded explanations only; verdicts stay rule-driven and any
-  API failure degrades to a generic explanation. Credentials come from the environment only.
+- `LLM::AnthropicAdapter` (Claude Messages API) and `LLM::OpenAICompatibleAdapter`
+  (`/chat/completions`, the OpenCode config-swap path) — grounded explanations only; verdicts
+  stay rule-driven and any API failure degrades to a generic explanation. Credentials come from
+  the environment only.
+- `Embedding::OpenAICompatibleAdapter` (`/embeddings`) — real vector embeddings for pgvector
+  retrieval, batched per request, with the returned dimension validated against `embedding_dim`.
+  Completes the swappable-adapter layer: the OpenCode swap covers both LLM and embeddings.
 - Seed data: five Tokyo-sourced / national / Saitama programs spanning
   給付金・助成金・控除, producing the full 該当 / 非該当 / 要確認 spread for the demo profile.
 - minitest suite covering geo, rule evaluation, aggregation precedence, the carve-out cap
