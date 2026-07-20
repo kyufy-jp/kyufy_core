@@ -104,7 +104,7 @@ kyufy_core/
   - **東京23区 (特別区) are NOT designated-city wards**: each special ward is a full municipality in its own right (JIS 13101–13123) with **no parent city** — it sits directly under 東京都. `geo.rb` must NOT attempt parent-city normalization for 特別区; a 新宿区 resident matches 新宿区 programs directly, plus 東京都 prefecture-level programs, plus national. The ward→city table therefore covers only the 20 designated cities' wards and must exclude codes 131xx. (The primary demo Profile (§11) is a 23-ward resident, so getting this wrong breaks the main demo.)
 - **Requirement (要件)**: `program_id`, `kind` (income / age / residence / household / employment / other), `operator` (lt / lte / gt / gte / eq / in / exists), `value` (jsonb), `raw_text` (the exact 要綱 excerpt), `source_document_id`. → Holding **both** a machine-readable condition and the original quoted text is the crux.
   - `kind: income` semantics are fixed: the value is **prior-year 所得 (net/taxable income) in JPY** unless the requirement's `value` jsonb explicitly overrides with `{ "measure": "収入" }`. This matches the Profile field definition in §7 — 所得 vs 収入 flips verdicts, so the default must be singular and documented.
-- **SourceDocument (要綱)**: `program_id`, `title`, `url`, `fetched_at`, `body`.
+- **SourceDocument (要綱)**: `program_id`, `title`, `url`, `fetched_at`, `body`, **`license`** (nullable string, e.g. "CC-BY-4.0"). Rationale: Tokyo's uniformly CC-BY catalog hid this need; Saitama's per-dataset licensing exposed it. Skipping disallowed licenses gates ingestion (out-of-gem), but **attribution must travel with the data** — surfacing the license is required both for CC BY compliance in outputs and for the appendix's data-monetization (Pay-Per-Use) readiness claim to be true. **Implementation note: unlike the adapter sections (out-of-gem), this is an in-gem code change** — migration column, model attribute, Importer mapping (NormalizedDocument.license → SourceDocument.license), and surfacing through the §7 Result/JSON (see §7).
 - **DocumentChunk**: `source_document_id`, `content`, `embedding vector(EMBEDDING_DIM)`, `position`. pgvector **HNSW** index (pick HNSW, not ivfflat; at MVP scale of 3–5 programs the index is optional — create it anyway in the migration, it costs nothing).
   - **`EMBEDDING_DIM` is set once at install time** via `KyufyCore.configure` + the migration (default: 1536). Different embedding models have different dimensions; changing it later means a migration + re-embedding everything. Say so in the migration comment.
 - **Profile is never persisted** (avoid PII storage). It is a value object passed in at assess time.
@@ -150,6 +150,7 @@ module KyufyCore
 
     NormalizedDocument = Struct.new(
       :title, :url, :body, :fetched_at,
+      :license,                                  # nullable, e.g. "CC-BY-4.0" — travels to SourceDocument
       keyword_init: true
     )
 
@@ -170,12 +171,45 @@ end
 kyufy_core                  … Source port + Importer + normalized schema (public, MIT)
 kyufy-adapters (separate)   … concrete adapters:
   ├── ManualYamlAdapter     … hand-written YAML → NormalizedProgram   ← MVP uses ONLY this
-  ├── TokyoCatalogAdapter   … 都オープンデータカタログ CSV → normalized
-  ├── SaitamaCityAdapter    … municipality HTML/PDF scrape → normalized
-  └── LlmExtractionAdapter  … generic: LLM reads 要綱 text → drafts NormalizedProgram,
-                              human reviews & confirms (源内-style doc×LLM, applied to ingestion)
+  ├── CkanCatalogAdapter    … **generic CKAN-family catalog → normalized** (formerly "TokyoCatalogAdapter";
+  │                           generalized after verifying TWO catalogs speak the same protocol):
+  │                           - Tokyo Open Data catalog: native CKAN, `/api/3/action/package_search` etc.
+  │                             (API verified live: success:true, count:322 for q=給付金). HTML UI is
+  │                             CAPTCHA-gated even for humans (maintainer-observed); the API is the
+  │                             official route.
+  │                           - Saitama "dataeye" portal: CKAN-compatible API, `/ckan_api/package_search`
+  │                             etc. (same verbs: package_list/show, resource_show, organization_list;
+  │                             same success/result response shape; resource `url` = file download link).
+  │                           One class + per-catalog config (base_url, path prefix); reaches Tokyo,
+  │                           Saitama, and any other prefecture running CKAN or dataeye.
+  │                           **Discovery targets the schema, not keywords**: primary query filters on
+  │                           tags:自治体標準オープンデータセット + format:CSV + the 支援制度 dataset-name
+  │                           pattern (keyword q=給付金 returns ~322 mixed results incl. ad-hoc HTML
+  │                           resources — fallback only). Skip non-conforming resources; only
+  │                           standard-schema CSVs have the known column set (Digital Agency's nationwide
+  │                           format; Nakano/Koganei/Higashimurayama confirmed publishing, CC BY-4.0).
+  │                           The CSV's 対象 column is prose → left as a NormalizedDocument body with
+  │                           requirements empty; see LlmExtractionAdapter.
+  │                           **Per-catalog cautions**: Saitama warns of possible access throttling —
+  │                           build in rate limiting; and licenses there are per-dataset (not uniformly
+  │                           CC BY like Tokyo) — the adapter must capture each dataset's license field
+  │                           into the ingestion record and skip datasets whose license forbids reuse.
+  ├── SaitamaCityAdapter    … **fallback scrape** (HTML/PDF → normalized) for municipalities NOT publishing
+  │                           to any CKAN catalog. Distinct from CkanCatalogAdapter's Saitama-dataeye path:
+  │                           dataeye is the prefecture's CKAN catalog; this adapter is for sources with no
+  │                           catalog at all.
+  └── LlmExtractionAdapter  … generic, and **a decorator over any Source, not a peer**:
+                              `LlmExtractionAdapter.new(inner_source)` calls the inner adapter's
+                              fetch_programs, reads each NormalizedProgram whose requirements are
+                              empty/prose-only (the 対象 text sits in a NormalizedDocument body),
+                              has the LLM draft the NormalizedRequirements, and returns the enriched
+                              programs. Human reviews & confirms before import (源内-style doc×LLM).
+                              Both stay Sources; the outer wraps the inner; kyufy_core's port and
+                              Importer need zero changes — composition without a new seam.
 ```
 (Exception: a minimal `ManualYamlAdapter` ships inside this gem's test/seed support, since the seed needs it.)
+
+**CC BY attribution**: runtime ingestion already satisfies attribution (official_url / source_document.url are preserved and surfaced). But if kyufy-adapters or any seed **bundles/commits CSV-derived data into a repo**, CC BY requires an explicit source + license credit in that repo (a NOTICE/README line naming the dataset, municipality, and CC BY-4.0).
 
 Why outside the gem:
 1. **Matches the business model**: "engine = free public good; writing/maintaining YOUR municipality's adapter = the paid service." The Open Core split is enforced by the code structure itself.
@@ -234,7 +268,10 @@ result.each do |program_result|
   program_result.program_name
   program_result.verdict        # :eligible / :ineligible / :needs_review
   program_result.reasons        # [{ requirement_id: "req_…", kind:, verdict:, explanation:,
-                                #    citation:, source_url: }]
+                                #    citation:, source_url:, license: }]
+                                # license = the cited SourceDocument's license (nullable) —
+                                # storage without surfacing would leave the CC BY compliance
+                                # claim unsatisfied; attribution reaches the output here.
   program_result.disclaimer
 end
 ```
