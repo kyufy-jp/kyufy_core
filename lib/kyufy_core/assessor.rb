@@ -74,13 +74,17 @@ module KyufyCore
 
     def assess_program(program, admission)
       requirements = program.requirements.to_a
-      evaluations = requirements.map { |req| [ req, RuleCheck.evaluate(req, profile) ] }
+      evaluations = requirements.map { |req| [ req, rule_for(req, admission) ] }
       explanations = ground(program, evaluations)
 
       reasons = evaluations.map do |req, rule|
         build_reason(program, req, rule, explanations[req.id])
       end
-      reasons << residence_unverified_reason(program) if capped?(admission)
+      # The carve-out cap synthesizes a residence reason only when the program has no residence
+      # requirement of its own — otherwise that requirement already carries the 要確認 (below).
+      if capped?(admission) && requirements.none? { |req| req.kind == "residence" }
+        reasons << residence_unverified_reason(program)
+      end
 
       Result::ProgramResult.new(
         program_id: program.prefix_id,
@@ -88,6 +92,17 @@ module KyufyCore
         verdict: aggregate(reasons),
         reasons: reasons
       )
+    end
+
+    # A residence requirement is a geographic condition, so it's decided by the step-0 admission,
+    # not by RuleCheck (the flat Profile can't re-verify residence). A full :match means the
+    # profile's residence is confirmed in the program's scope → met (該当); an :ancestor /
+    # carve-out admission is coarser than the program → undeterminable (要確認), matching the cap.
+    # Everything else evaluates normally.
+    def rule_for(requirement, admission)
+      return RuleCheck.evaluate(requirement, profile) unless requirement.kind == "residence"
+
+      admission == :match ? :met : :undeterminable
     end
 
     # Batched per program (§6 step 3): one LLM call grounds all of a program's requirements.

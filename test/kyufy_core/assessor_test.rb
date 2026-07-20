@@ -122,6 +122,32 @@ module KyufyCore
       assert_equal :needs_review, pr.verdict
     end
 
+    # --- residence requirement decided by the geographic admission ---
+
+    test "a residence requirement is satisfied by a geographic match (該当), keeping its citation" do
+      prog = tokyo_pref_program
+      add_requirement(prog, kind: "age", operator: "gte", value: { "threshold" => 18 })
+      add_requirement(prog, kind: "residence", operator: "eq", value: { "eq" => "都内" }, raw_text: "都内に住所を有すること")
+      pr = KyufyCore.assess(profile: shinjuku_profile).program_results.find { |x| x.program_id == prog.prefix_id }
+
+      residence = pr.reasons.find { |r| r[:kind] == :residence }
+      assert_equal :eligible, residence[:verdict], "matched residence resolves to 該当"
+      assert_equal "都内に住所を有すること", residence[:citation], "citation is preserved"
+      assert_equal :eligible, pr.verdict, "an in-scope resident with all requirements met is 該当"
+    end
+
+    test "a residence requirement on a carve-out program stays 要確認 with no duplicate synthesized reason" do
+      prog = build_program(jurisdiction: "municipality", prefecture_code: "13", municipality_code: "13104")
+      add_requirement(prog, kind: "residence", operator: "eq", value: { "eq" => "新宿区" }, raw_text: "新宿区に住民登録があること")
+      pr = KyufyCore.assess(profile: shinjuku_profile(residence: "東京都")) # ancestor admission
+        .program_results.find { |x| x.program_id == prog.prefix_id }
+
+      residence_reasons = pr.reasons.select { |r| r[:kind] == :residence }
+      assert_equal 1, residence_reasons.length, "the requirement carries the cap — no extra synthesized reason"
+      assert_equal :needs_review, residence_reasons.first[:verdict]
+      assert_equal :needs_review, pr.verdict
+    end
+
     # --- citation degradation (§6 fail-safe) ---
 
     test "a requirement with no citation degrades to 要確認 and keeps the program present" do

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Residence requirements are decided by the geographic admission, not RuleCheck.** A residence
+  requirement on a program the step-0 filter admitted by a full `:match` now resolves to 該当 (the
+  profile's residence is confirmed in the program's scope), keeping its citation — instead of
+  degrading to 要確認 because the flat Profile can't re-verify it. `:ancestor` / normalization-failure
+  admissions stay 要確認 (the carve-out cap). The synthesized `residence_unverified` reason is now
+  added only when a carve-out program has no residence requirement of its own (no duplicate). This
+  fixes clearly-eligible residents (e.g. a Tokyo child on 018サポート) showing 要確認.
+
 ### Added
 - **License threading (attribution travels with the data)**: `SourceDocument` gains a nullable
   `license` column; it flows `NormalizedDocument.license` → Importer → `SourceDocument` → each
