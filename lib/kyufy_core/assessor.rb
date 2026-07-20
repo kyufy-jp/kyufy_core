@@ -145,13 +145,27 @@ module KyufyCore
       nil
     end
 
+    # A meaningful Japanese query per requirement kind, for the pgvector back-fill below. The bare
+    # English kind label ("income") embeds poorly against Japanese 要綱 text, so a weak/irrelevant
+    # chunk would be cited (or dropped once evidence_max_distance is set) — a real query phrase
+    # keeps the nearest-neighbour search on-topic.
+    EVIDENCE_QUERY = {
+      "income"     => "所得・収入・住民税など経済的な要件",
+      "age"        => "年齢の要件",
+      "residence"  => "居住地・住所・在住の要件",
+      "household"  => "世帯・世帯構成・世帯人数の要件",
+      "employment" => "雇用・就業・被保険者などの要件"
+    }.freeze
+
     # Primary citation is the requirement's own 要綱 excerpt (raw_text); pgvector chunks
     # back-fill it. nil means no citation could be produced -> citation_unavailable degradation.
     def citation_for(program, requirement)
       excerpt = requirement.raw_text.to_s.strip
       return excerpt unless excerpt.empty?
 
-      chunk = retriever.evidence_chunks(program: program, query: requirement.kind.to_s, limit: 1).first
+      kind  = requirement.kind.to_s
+      query = EVIDENCE_QUERY.fetch(kind, kind)
+      chunk = retriever.evidence_chunks(program: program, query: query, limit: 1).first
       chunk&.content&.strip.presence
     end
 
