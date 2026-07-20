@@ -112,8 +112,9 @@ ship:
 
 ```ruby
 # Anthropic (Claude). Reads ENV["KYUFY_ANTHROPIC_API_KEY"] — a DEDICATED key, separate from
-# ANTHROPIC_API_KEY. `model:` is configurable (default claude-opus-4-8; e.g. claude-haiku-4-5
-# for lower cost). Requires the `anthropic` gem (loaded lazily).
+# ANTHROPIC_API_KEY. Model is configurable via `model:` or ENV["KYUFY_ANTHROPIC_MODEL"]
+# (default claude-haiku-4-5; e.g. claude-opus-4-8 for higher-quality explanations).
+# Requires the `anthropic` gem (loaded lazily).
 c.llm_adapter = KyufyCore::LLM::AnthropicAdapter.new
 
 # OpenAI-compatible (OpenCode / OpenAI / local). Config via ENV: KYUFY_OPENAI_API_KEY,

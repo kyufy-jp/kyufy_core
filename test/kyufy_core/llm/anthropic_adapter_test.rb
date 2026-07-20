@@ -47,7 +47,7 @@ module KyufyCore
 
         result = adapter.assess_program(program: FakeProgram.new("テスト給付金"), items: items)
 
-        assert_equal "claude-opus-4-8", client.messages.last_args[:model]
+        assert_equal "claude-haiku-4-5", client.messages.last_args[:model]
         assert_equal AnthropicAdapter::MAX_TOKENS, client.messages.last_args[:max_tokens]
         assert_equal 1, client.messages.last_args[:messages].length, "batched into one call"
         assert_equal [ :eligible, :ineligible ], result.map { |r| r[:verdict] }

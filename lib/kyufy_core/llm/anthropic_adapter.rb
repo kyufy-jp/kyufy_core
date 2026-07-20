@@ -9,12 +9,15 @@ module KyufyCore
     # pick up, e.g. a tooling key). Never hard-code a key.
     #
     # The `anthropic` gem is required lazily so host apps using only the Null adapters don't need
-    # it. `model:` is configurable (default claude-opus-4-8; set e.g. "claude-haiku-4-5" to trade
-    # explanation quality for cost).
+    # it. The model is configurable: pass `model:`, or set ENV["KYUFY_ANTHROPIC_MODEL"]. Default is
+    # claude-haiku-4-5 — this adapter only writes the explanation prose (verdicts and verbatim
+    # citations come from the rules / retrieved text, not the model's judgment), so Haiku's low cost
+    # is the right trade. Set e.g. "claude-opus-4-8" for higher-quality explanations.
     class AnthropicAdapter < GroundedAdapter
-      DEFAULT_MODEL = "claude-opus-4-8".freeze
+      DEFAULT_MODEL = "claude-haiku-4-5".freeze
 
-      def initialize(api_key: ENV["KYUFY_ANTHROPIC_API_KEY"], model: DEFAULT_MODEL, client: nil)
+      def initialize(api_key: ENV["KYUFY_ANTHROPIC_API_KEY"],
+                     model: ENV["KYUFY_ANTHROPIC_MODEL"] || DEFAULT_MODEL, client: nil)
         @api_key = api_key
         @model = model
         @client = client
