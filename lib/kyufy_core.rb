@@ -35,7 +35,8 @@ module KyufyCore
   # is unset, the assessment surfaces the question to ask (on the reason's `follow_up`) so the
   # shell can prompt. Users typically KNOW these answers.
   FOLLOW_UP_QUESTIONS = {
-    resident_tax_exempt: "住民税は非課税ですか?（お住まいの通知書で確認できます）"
+    resident_tax_exempt: "住民税は非課税ですか?（お住まいの通知書で確認できます）",
+    employment_insured_period: "雇用保険に通算3年以上（初回は1年以上）加入していましたか?"
   }.freeze
 
   class Error < StandardError; end
