@@ -36,6 +36,6 @@
       operator: eq
       value:
         eq: 都内
-        note: 各月1日時点の在住状況を確認（地理フィルタで判定、要確認に degrade）
+        note: 住所要件は地理フィルタで判定：スコープ一致→該当、carve-out（ancestor/正規化失敗）→要確認
       raw_text: 令和8年度中に都内に住所を有する又は有していた方（原則）
       document_ref: 0
