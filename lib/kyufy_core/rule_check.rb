@@ -26,6 +26,14 @@ module KyufyCore
         return profile.resident_tax_exempt == true ? :met : :undeterminable
       end
 
+      # 教育訓練給付: eligibility needs 雇用保険被保険者 status AND 被保険者期間3年以上（初回1年以上）.
+      # The insured period isn't in the Profile, so we never emit 該当 here — an employee (current
+      # or former) is 要確認 (unverifiable period, resolved by a 逆質問), and only the clearly-not-
+      # 被保険者 self_employed is 非該当. Anti-omission + fail-safe: no loose 該当.
+      if kind == "employment" && value["measure"] == "雇用保険被保険者期間"
+        return profile.value_for("employment") == "self_employed" ? :not_met : :undeterminable
+      end
+
       actual = profile.value_for(kind)
       operator = requirement.operator.to_s
 

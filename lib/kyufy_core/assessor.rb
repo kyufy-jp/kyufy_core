@@ -142,6 +142,11 @@ module KyufyCore
         return KyufyCore::FOLLOW_UP_QUESTIONS[:resident_tax_exempt]
       end
 
+      # 教育訓練: a 要確認 here always means the 被保険者期間 couldn't be verified — ask for it.
+      if requirement.kind == "employment" && value["measure"] == "雇用保険被保険者期間"
+        return KyufyCore::FOLLOW_UP_QUESTIONS[:employment_insured_period]
+      end
+
       nil
     end
 

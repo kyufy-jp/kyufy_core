@@ -28,7 +28,10 @@
     - kind: employment
       operator: eq
       value:
-        eq: employee
-        note: 雇用保険被保険者（=被雇用者）を要件とする。self_employed は 非該当。被保険者期間3年以上（初回は1年以上）は Profile に項目がなく未モデル化。
+        measure: 雇用保険被保険者期間
+        note: >-
+          要件は「雇用保険の被保険者または被保険者であった方（離職者）」かつ「被保険者期間3年以上（初回1年以上）」。
+          後者は Profile に項目がなく検証できないため、被雇用者でも 該当 とは断定せず 要確認 に留める（fail-safe）。
+          self_employed は 被保険者ではないので 非該当。measure 分岐は RuleCheck を参照。
       raw_text: 雇用保険の被保険者または被保険者であった方（離職者）
       document_ref: 0
