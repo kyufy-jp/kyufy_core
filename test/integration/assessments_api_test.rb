@@ -67,6 +67,28 @@ module KyufyCore
       assert(income_reasons.none? { |r| r["verdict"] == "ineligible" })
     end
 
+    test "POST /assessments/household with no members returns 422 JSON, not a 500 HTML page" do
+      post "/kyufy_core/assessments/household", params: { members: [] }, as: :json
+
+      assert_response :unprocessable_content
+      body = JSON.parse(response.body)
+      assert body.key?("error")
+      assert_match(/at least one member/, body["error"])
+    end
+
+    test "POST /assessments/household with members in different municipalities returns 422 JSON" do
+      post "/kyufy_core/assessments/household", params: {
+        members: [
+          { age: 40, residence: "新宿区" },
+          { age: 8, residence: "さいたま市中央区" }
+        ]
+      }, as: :json
+
+      assert_response :unprocessable_content
+      body = JSON.parse(response.body)
+      assert_match(/share a residence/, body["error"])
+    end
+
     test "plain_language: true yields やさしい日本語 explanations" do
       post "/kyufy_core/assessments", params: {
         profile: { age: 52, residence: "新宿区", target: "individual", prior_year_income_jpy: 864_000 },
