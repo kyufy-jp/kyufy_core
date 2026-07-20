@@ -37,7 +37,8 @@ result = KyufyCore.assess(
     household_size: 3,
     prior_year_income_jpy: 864_000,   # 所得 (net/taxable), prior year — NOT 収入 (gross)
     employment: "self_employed",
-    target: "individual"
+    target: "individual",
+    resident_tax_exempt: nil       # 住民税非課税世帯? true/false/nil — answered directly, not computed
   },
   categories: %w[給付金 手当 控除],     # optional
   plain_language: false                 # true → explanations in やさしい日本語 (easy Japanese)
@@ -46,7 +47,10 @@ result = KyufyCore.assess(
 result.each do |program_result|
   program_result.program_id     # "prog_…" — a prefixed id, never a raw PK
   program_result.verdict        # :eligible / :ineligible / :needs_review
-  program_result.reasons        # [{ requirement_id:, kind:, verdict:, explanation:, citation:, source_url:, ... }]
+  program_result.reasons        # [{ requirement_id:, kind:, verdict:, explanation:, citation:,
+                                #    source_url:, license:, follow_up: }]
+                                # follow_up = a 逆質問 to resolve a 要確認 when a directly-answerable
+                                # Profile field (e.g. resident_tax_exempt) is unset; else nil
   program_result.disclaimer
 end
 ```

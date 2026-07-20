@@ -43,7 +43,9 @@ module KyufyCore
         residence: residence,
         household_size: size,
         prior_year_income_jpy: total_income,
-        target: "individual"
+        target: "individual",
+        # 住民税非課税 is a 世帯-level status the members share; take it from the household.
+        resident_tax_exempt: members.first.resident_tax_exempt
       )
     end
 

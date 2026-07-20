@@ -127,8 +127,22 @@ module KyufyCore
         explanation: explanation,
         citation: citation,
         source_url: program.official_url,
-        license: requirement.source_document&.license
+        license: requirement.source_document&.license,
+        follow_up: follow_up_for(requirement, verdict)
       )
+    end
+
+    # The 逆質問 that would resolve a 要確認, when it's only unresolved because a directly-answerable
+    # Profile field is unset. nil otherwise.
+    def follow_up_for(requirement, verdict)
+      return nil unless verdict == :needs_review
+
+      value = requirement.value.is_a?(Hash) ? requirement.value : {}
+      if requirement.kind == "income" && value["measure"] == "住民税非課税" && profile.resident_tax_exempt.nil?
+        return KyufyCore::FOLLOW_UP_QUESTIONS[:resident_tax_exempt]
+      end
+
+      nil
     end
 
     # Primary citation is the requirement's own 要綱 excerpt (raw_text); pgvector chunks

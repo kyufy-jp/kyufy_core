@@ -2,7 +2,8 @@ module KyufyCore
   # Optional mountable JSON API (§7). POST /assessments with a profile returns the JSON mirror
   # of KyufyCore.assess — prefixed IDs only, never raw PKs. No auth here (the shell handles it).
   class AssessmentsController < ApplicationController
-    PROFILE_FIELDS = %i[age residence household_size prior_year_income_jpy employment target].freeze
+    PROFILE_FIELDS = %i[age residence household_size prior_year_income_jpy employment target
+                        resident_tax_exempt].freeze
 
     def create
       result = KyufyCore.assess(

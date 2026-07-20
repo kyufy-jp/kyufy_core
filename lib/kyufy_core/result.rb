@@ -48,7 +48,8 @@ module KyufyCore
     class Reason
       # `license` is the cited SourceDocument's license (nullable) — attribution travels with the
       # data to the output (§4/§7). Synthesized reasons (no cited document) carry nil.
-      def self.build(requirement_id:, kind:, verdict:, explanation:, citation:, source_url:, license: nil)
+      def self.build(requirement_id:, kind:, verdict:, explanation:, citation:, source_url:,
+                     license: nil, follow_up: nil)
         {
           requirement_id: requirement_id,
           kind: kind,
@@ -57,7 +58,9 @@ module KyufyCore
           citation: citation,
           citation_status: citation.nil? ? :unavailable : :present,
           source_url: source_url,
-          license: license
+          license: license,
+          # 逆質問 to resolve this 要確認 when a directly-answerable Profile field is unset; nil otherwise.
+          follow_up: follow_up
         }
       end
     end

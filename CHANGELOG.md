@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **住民税非課税世帯 status (Phase 1: ask, don't compute)**: a `resident_tax_exempt` Profile field
+  (true/false/nil) that the user answers directly. A `kind: income` requirement with
+  `value: { measure: "住民税非課税" }` now returns a real verdict — `true` → 該当; `false`/`nil` →
+  要確認 (never 非該当, since such requirements usually carry OR alternatives like 児童扶養手当受給).
+  When unset, the reason surfaces a **逆質問** (`follow_up`): "住民税は非課税ですか?（お住まいの通知書で
+  確認できます）", from `KyufyCore::FOLLOW_UP_QUESTIONS`. This takes 杉並区's income requirement from
+  要確認 to a real verdict. Computing 非課税 from 世帯合算所得 vs. the 限度額 table is deliberately
+  deferred (級地/composition variance would risk a loose 該当 on a means-tested benefit).
+
 ### Changed
 - **Residence requirements are decided by the geographic admission, not RuleCheck.** A residence
   requirement on a program the step-0 filter admitted by a full `:match` now resolves to 該当 (the
