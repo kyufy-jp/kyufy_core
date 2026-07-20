@@ -16,6 +16,9 @@
     - title: 一般教育訓練給付金 — 支給対象者
       url: https://www.hellowork.mhlw.go.jp/insurance/insurance_education.html
       fetched_at: 2026-07-20
+      # 厚労省コンテンツは「公共データ利用規約（第1.0版）」(PDL1.0) に準拠。
+      # 出典: https://www.mhlw.go.jp/chosakuken/ （※機構横断の著作権表示。hellowork自体の規約はサービス利用規約）。
+      license: PDL1.0
       body: |
         一般教育訓練給付金は、雇用の安定と再就職の促進を支援するため、一定の条件を満たす雇用保険の被保険者または被保険者であった方（離職者）が、厚生労働大臣の指定する一般教育訓練を受講し、修了した場合は、受講者が支払った教育訓練経費の20％（上限10万円）をハローワークから支給します。
         （支給対象者）

@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **License threading (attribution travels with the data)**: `SourceDocument` gains a nullable
+  `license` column; it flows `NormalizedDocument.license` → Importer → `SourceDocument` → each
+  Result reason (`{…, source_url, license}`) and the JSON API. The reason's license is read from
+  the *cited* `requirement.source_document`, so synthesized/carve-out reasons carry `license: nil`.
+  Seed licenses were captured per official page (教育訓練 = PDL1.0; the 東京都/杉並区 pages reserve
+  rights → nil).
 - **Real program seed data** (`db/seeds/programs/*.yml`, loaded via `KyufyCore.import_dir`): four
   programs sourced verbatim from official pages — 018サポート, 子育て応援＋, 杉並区エアコン購入費助成,
   一般教育訓練給付金. Every `raw_text` is a quote from the official source (see the PR for the

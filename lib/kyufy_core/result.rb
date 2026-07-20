@@ -46,7 +46,9 @@ module KyufyCore
     # produced, citation is nil, citation_status is :unavailable, and source_url still
     # carries the official URL (the citation_unavailable degradation — §6 fail-safe).
     class Reason
-      def self.build(requirement_id:, kind:, verdict:, explanation:, citation:, source_url:)
+      # `license` is the cited SourceDocument's license (nullable) — attribution travels with the
+      # data to the output (§4/§7). Synthesized reasons (no cited document) carry nil.
+      def self.build(requirement_id:, kind:, verdict:, explanation:, citation:, source_url:, license: nil)
         {
           requirement_id: requirement_id,
           kind: kind,
@@ -54,7 +56,8 @@ module KyufyCore
           explanation: explanation,
           citation: citation,
           citation_status: citation.nil? ? :unavailable : :present,
-          source_url: source_url
+          source_url: source_url,
+          license: license
         }
       end
     end

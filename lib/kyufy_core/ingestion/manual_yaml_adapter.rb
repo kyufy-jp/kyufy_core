@@ -46,7 +46,8 @@ module KyufyCore
           title: doc["title"],
           url: doc["url"],
           body: doc["body"],
-          fetched_at: doc["fetched_at"]
+          fetched_at: doc["fetched_at"],
+          license: doc["license"]
         )
       end
 

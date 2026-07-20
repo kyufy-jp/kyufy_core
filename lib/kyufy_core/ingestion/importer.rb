@@ -61,7 +61,8 @@ module KyufyCore
           title: nd.title,
           url: nd.url,
           body: nd.body,
-          fetched_at: nd.fetched_at
+          fetched_at: nd.fetched_at,
+          license: nd.license
         )
 
         chunk(nd.body).each_with_index do |content, position|

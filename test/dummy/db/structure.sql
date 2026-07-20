@@ -164,7 +164,8 @@ CREATE TABLE public.kyufy_core_source_documents (
     fetched_at timestamp(6) without time zone,
     body text,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    license character varying
 );
 
 
@@ -382,5 +383,6 @@ ALTER TABLE ONLY public.kyufy_core_requirements
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260720000001'),
 ('20260718000001');
 
