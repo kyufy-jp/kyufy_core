@@ -4,7 +4,12 @@ module KyufyCore
   # lazily via Geo. `prior_year_income_jpy` is 所得 (net/taxable), NOT 収入 (gross) — the field
   # name forces the choice (§4 income semantics).
   class Profile
-    ATTRIBUTES = %i[age residence household_size prior_year_income_jpy employment target].freeze
+    # `resident_tax_exempt` (住民税非課税) is a 世帯-level status the user answers directly (a 逆質問
+    # — see KyufyCore::FOLLOW_UP_QUESTIONS): true / false / nil (unknown). Asking is simpler and
+    # safer than computing it from 世帯合算所得 against the 非課税限度額 table (級地/composition
+    # variance makes a computed verdict on a means-tested benefit error-prone).
+    ATTRIBUTES = %i[age residence household_size prior_year_income_jpy employment target
+                    resident_tax_exempt].freeze
 
     attr_reader(*ATTRIBUTES)
 
@@ -16,13 +21,15 @@ module KyufyCore
     end
 
     def initialize(age: nil, residence: nil, household_size: nil,
-                   prior_year_income_jpy: nil, employment: nil, target: nil)
+                   prior_year_income_jpy: nil, employment: nil, target: nil,
+                   resident_tax_exempt: nil)
       @age                   = age
       @residence             = residence
       @household_size        = household_size
       @prior_year_income_jpy = prior_year_income_jpy
       @employment            = employment
       @target                = target
+      @resident_tax_exempt   = resident_tax_exempt
     end
 
     # Normalized residence (Geo::Residence) or nil when normalization fails.

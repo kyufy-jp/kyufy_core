@@ -31,6 +31,13 @@ module KyufyCore
   # Fixed disclaimer that every assessment output must carry (§6 fail-safe).
   DISCLAIMER = "これは参考判定です。最終確認は各制度の公式窓口で行ってください。".freeze
 
+  # 逆質問: when a requirement resolves to 要確認 only because a directly-answerable Profile field
+  # is unset, the assessment surfaces the question to ask (on the reason's `follow_up`) so the
+  # shell can prompt. Users typically KNOW these answers.
+  FOLLOW_UP_QUESTIONS = {
+    resident_tax_exempt: "住民税は非課税ですか?（お住まいの通知書で確認できます）"
+  }.freeze
+
   class Error < StandardError; end
 
   class << self

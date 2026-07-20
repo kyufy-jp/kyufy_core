@@ -19,6 +19,13 @@ module KyufyCore
 
       return :undeterminable if kind == "income" && value["measure"] == "収入"
 
+      # 住民税非課税世帯 status is answered directly by the Profile (a 逆質問), not computed from
+      # 所得. true → met (該当). false / nil → undeterminable (要確認): such requirements usually
+      # carry OR alternatives (e.g. 児童扶養手当受給), so we never emit 非該当 here — anti-omission.
+      if kind == "income" && value["measure"] == "住民税非課税"
+        return profile.resident_tax_exempt == true ? :met : :undeterminable
+      end
+
       actual = profile.value_for(kind)
       operator = requirement.operator.to_s
 
