@@ -111,7 +111,8 @@ module KyufyCore
         verdict: verdict,
         explanation: explanation,
         citation: citation,
-        source_url: program.official_url
+        source_url: program.official_url,
+        license: requirement.source_document&.license
       )
     end
 
