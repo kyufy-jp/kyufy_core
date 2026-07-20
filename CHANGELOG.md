@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-21
+
+First tagged release. The assessment engine, JSON API, pgvector retrieval, swappable LLM/embedding
+adapters, and five verbatim-cited real seed programs.
+
 ### Added
 - **住民税非課税世帯 status (Phase 1: ask, don't compute)**: a `resident_tax_exempt` Profile field
   (true/false/nil) that the user answers directly. A `kind: income` requirement with
@@ -112,4 +117,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now caps at 要確認 (with a 逆質問, `KyufyCore::FOLLOW_UP_QUESTIONS[:employment_insured_period]`) and
   only the clearly-not-被保険者 `self_employed` is 非該当 — never a loose 該当 (fail-safe).
 
-[Unreleased]: https://github.com/dadachi/kyufy_core/commits/main
+[Unreleased]: https://github.com/dadachi/kyufy_core/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/dadachi/kyufy_core/releases/tag/v0.1.0
