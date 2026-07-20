@@ -16,17 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   確認できます）", from `KyufyCore::FOLLOW_UP_QUESTIONS`. This takes 杉並区's income requirement from
   要確認 to a real verdict. Computing 非課税 from 世帯合算所得 vs. the 限度額 table is deliberately
   deferred (級地/composition variance would risk a loose 該当 on a means-tested benefit).
-
-### Changed
-- **Residence requirements are decided by the geographic admission, not RuleCheck.** A residence
-  requirement on a program the step-0 filter admitted by a full `:match` now resolves to 該当 (the
-  profile's residence is confirmed in the program's scope), keeping its citation — instead of
-  degrading to 要確認 because the flat Profile can't re-verify it. `:ancestor` / normalization-failure
-  admissions stay 要確認 (the carve-out cap). The synthesized `residence_unverified` reason is now
-  added only when a carve-out program has no residence requirement of its own (no duplicate). This
-  fixes clearly-eligible residents (e.g. a Tokyo child on 018サポート) showing 要確認.
-
-### Added
 - **License threading (attribution travels with the data)**: `SourceDocument` gains a nullable
   `license` column; it flows `NormalizedDocument.license` → Importer → `SourceDocument` → each
   Result reason (`{…, source_url, license}`) and the JSON API. The reason's license is read from
@@ -88,5 +77,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (including the no-residence-row case), citation degradation, the no-raw-PK guarantee,
   pgvector retrieval, ingestion, the JSON API, and mocked LLM-adapter contracts. The Anthropic
   live smoke test is gated on `KYUFY_ANTHROPIC_API_KEY` and skips cleanly without it.
+- **Live retrieval + grounding smoke test**: a single end-to-end test that runs BOTH real adapters
+  through `assess()` (real embeddings + real Claude), proving a `raw_text`-less requirement is cited
+  from a real pgvector-retrieved chunk. Gated on both `KYUFY_OPENAI_API_KEY` and
+  `KYUFY_ANTHROPIC_API_KEY`; skips cleanly when either is absent.
+
+### Changed
+- **Residence requirements are decided by the geographic admission, not RuleCheck.** A residence
+  requirement on a program the step-0 filter admitted by a full `:match` now resolves to 該当 (the
+  profile's residence is confirmed in the program's scope), keeping its citation — instead of
+  degrading to 要確認 because the flat Profile can't re-verify it. `:ancestor` / normalization-failure
+  admissions stay 要確認 (the carve-out cap). The synthesized `residence_unverified` reason is now
+  added only when a carve-out program has no residence requirement of its own (no duplicate). This
+  fixes clearly-eligible residents (e.g. a Tokyo child on 018サポート) showing 要確認.
+- **Default LLM model is now `claude-haiku-4-5`** (was `claude-opus-4-8`). `AnthropicAdapter` grounds
+  explanation prose only — verdicts and verbatim citations come from the rules and retrieved 要綱
+  text — so Haiku's lower cost is the right default. The model is tunable without code changes via
+  a new `KYUFY_ANTHROPIC_MODEL` env var (mirroring the OpenAI adapter's `KYUFY_OPENAI_MODEL`); an
+  explicit `model:` kwarg still wins.
+- **pgvector citation back-fill queries a meaningful Japanese phrase per requirement kind**, not the
+  bare English kind label (`"income"`, `"age"`). The old query embedded poorly against Japanese 要綱
+  chunks; under a real `evidence_max_distance` an off-topic nearest chunk would be dropped and a
+  citable requirement would silently degrade to 要確認. Unknown kinds fall back to the label.
+
+### Fixed
+- **Invalid `POST /assessments/household` input returns 422 JSON, not a 500 HTML page.** An empty
+  `members` list, or members that resolve to different municipalities, raised `KyufyCore::Error` out
+  of the controller. It's now rescued at the API base controller and rendered as a
+  `:unprocessable_content` JSON body `{ "error": … }`, covering every engine endpoint.
+- **一般教育訓練給付金 no longer over-claims 該当 for an employee.** The 要綱 requires 雇用保険被保険者
+  status AND 被保険者期間3年以上（初回1年以上）; the insured period isn't a Profile field, so an employee
+  now caps at 要確認 (with a 逆質問, `KyufyCore::FOLLOW_UP_QUESTIONS[:employment_insured_period]`) and
+  only the clearly-not-被保険者 `self_employed` is 非該当 — never a loose 該当 (fail-safe).
 
 [Unreleased]: https://github.com/dadachi/kyufy_core/commits/main
