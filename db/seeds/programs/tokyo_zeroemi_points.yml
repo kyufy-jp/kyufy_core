@@ -1,0 +1,62 @@
+# 東京ゼロエミポイント（家庭のゼロエミッション行動推進事業）（助成金, individual, 東京都 prefecture 13）
+# Source (retrieved 2026-07-20):
+#   https://www.tz-points.jp/system/   （事業概要 →「対象となる方」）
+# raw_text values are VERBATIM from the 「対象となる方」→ 条件1〜4 section.
+# Note: 申請は登録販売店が行う店頭値引き方式（個人は申請不可）。都民資格＝地理要件のみ機械判定可、
+#   購入店舗・買替え・設置場所は Profile から判定不可 → 要確認（fail-safe）。
+- name: 東京ゼロエミポイント
+  authority: 東京都
+  jurisdiction: prefecture
+  prefecture_code: "13"
+  category: 助成金
+  target: individual
+  official_url: https://www.tz-points.jp/system/
+  valid_from: 2024-10-01   # ポイント交付の対象となる販売期間 令和6年10月1日〜
+  valid_until: 2027-03-31  # 〜令和9年（2027年）3月31日まで
+  status: active
+  source_documents:
+    - title: 東京ゼロエミポイント 事業概要 — 対象となる方
+      url: https://www.tz-points.jp/system/
+      fetched_at: 2026-07-20
+      # tz-points.jp フッター「© 2024 東京ゼロエミポイント All Rights Reserved.」＝権利留保、
+      # オープンライセンスの明示なし → null（東京都系ページと同じ扱い）。
+      license: null
+      body: |
+        「家庭のゼロエミッション行動推進事業」とは、設置済みのエアコン・冷蔵庫・給湯器・LED照明器具を除く照明器具を、省エネ性能の高いエアコン・冷蔵庫・給湯器・LED照明器具に買替えた都民に対して、東京ゼロエミポイント相当分を付与する、東京都が実施する事業です。
+        東京ゼロエミポイントと、都の同種の助成金等は併用できません。
+        助成金の申請は本事業に登録した事業者（販売店）が行います。個人の方は申請できませんのでご注意ください。
+        対象となる方（申請には条件があります）：
+        条件1 購入店舗：事前に登録された事業者（店舗）にて購入する方。
+        条件2 購入者・住所：都内に住所を有する個人であって、その住所を公的な書類（免許証等）で証明できる方。
+        条件3 買い替え：住宅に設置済みのエアコン、冷蔵庫、給湯器、照明器具を、省エネルギー性能の高い新品の対象家電等に買替えた方。※一部、新規購入も対象
+        条件4 設置場所：購入した対象家電等を都内の住宅に設置する方。
+        ポイント交付の対象となる販売期間：令和6年10月1日〜令和9年（2027年）3月31日まで（★3以上エアコンの高齢者・障害者向けは令和7年8月30日〜）。
+  requirements:
+    - kind: residence
+      operator: eq
+      value:
+        eq: 都内
+        note: 住所要件は地理フィルタで判定：スコープ一致→該当、carve-out（ancestor/正規化失敗）→要確認。
+      raw_text: 都内に住所を有する個人であって、その住所を公的な書類（免許証等）で証明できる方。
+      document_ref: 0
+    - kind: other
+      operator: eq
+      value:
+        eq: 該当
+        note: 事前登録された販売店での購入が要件。Profile から判定不可 → 要確認。
+      raw_text: 事前に登録された事業者（店舗）にて購入する方。
+      document_ref: 0
+    - kind: other
+      operator: eq
+      value:
+        eq: 該当
+        note: 設置済み家電の省エネ買替え（一部新規購入も対象）。Profile から判定不可 → 要確認。
+      raw_text: 住宅に設置済みのエアコン、冷蔵庫、給湯器、照明器具を、省エネルギー性能の高い新品の対象家電等に買替えた方。
+      document_ref: 0
+    - kind: other
+      operator: eq
+      value:
+        eq: 該当
+        note: 対象家電を都内の住宅に設置する要件。Profile から判定不可 → 要確認。
+      raw_text: 購入した対象家電等を都内の住宅に設置する方。
+      document_ref: 0
