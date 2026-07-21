@@ -209,5 +209,5 @@ so it's intentional — but hosts should be aware.
 
 ## License
 
-MIT. This gem contains no Jumpstart Pro code (paid, non-redistributable) and no Tailwind Plus
-code (this gem is UI-free by design).
+[MIT](MIT-LICENSE) — Copyright (c) 2026 Daisuke Adachi. This gem contains no Jumpstart Pro code
+(paid, non-redistributable) and no Tailwind Plus code (this gem is UI-free by design).
