@@ -116,6 +116,9 @@ adapters, and five verbatim-cited real seed programs.
   status AND 被保険者期間3年以上（初回1年以上）; the insured period isn't a Profile field, so an employee
   now caps at 要確認 (with a 逆質問, `KyufyCore::FOLLOW_UP_QUESTIONS[:employment_insured_period]`) and
   only the clearly-not-被保険者 `self_employed` is 非該当 — never a loose 該当 (fail-safe).
+- **Gemspec URLs point at the real repo.** `homepage`, `source_code_uri`, and `changelog_uri` now
+  resolve to `github.com/kyufy-jp/kyufy_core` — the org the project actually lives in (`kyufy` was
+  taken) — so a published gem's links land somewhere real.
 
-[Unreleased]: https://github.com/dadachi/kyufy_core/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/dadachi/kyufy_core/releases/tag/v0.1.0
+[Unreleased]: https://github.com/kyufy-jp/kyufy_core/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/kyufy-jp/kyufy_core/releases/tag/v0.1.0

@@ -5,7 +5,7 @@ Gem::Specification.new do |spec|
   spec.version     = KyufyCore::VERSION
   spec.authors     = [ "kyufy" ]
   spec.email       = [ "maurois@mac.com" ]
-  spec.homepage    = "https://github.com/dadachi/kyufy_core"
+  spec.homepage    = "https://github.com/kyufy-jp/kyufy_core"
   spec.summary     = "Assessment engine for Japanese public-benefit eligibility (給付金・補助金・助成金・手当・控除)."
   spec.description = "kyufy-core is the open-source assessment engine: it takes a profile and a " \
                      "program's requirements and returns 該当 / 非該当 / 要確認 with cited evidence " \
@@ -17,8 +17,8 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.2"
 
   spec.metadata["homepage_uri"]    = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/dadachi/kyufy_core"
-  spec.metadata["changelog_uri"]   = "https://github.com/dadachi/kyufy_core/blob/main/CHANGELOG.md"
+  spec.metadata["source_code_uri"] = "https://github.com/kyufy-jp/kyufy_core"
+  spec.metadata["changelog_uri"]   = "https://github.com/kyufy-jp/kyufy_core/blob/main/CHANGELOG.md"
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
