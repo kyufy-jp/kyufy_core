@@ -3,7 +3,7 @@ require_relative "lib/kyufy_core/version"
 Gem::Specification.new do |spec|
   spec.name        = "kyufy_core"
   spec.version     = KyufyCore::VERSION
-  spec.authors     = [ "kyufy" ]
+  spec.authors     = [ "Daisuke Adachi" ]
   spec.email       = [ "maurois@mac.com" ]
   spec.homepage    = "https://github.com/kyufy-jp/kyufy_core"
   spec.summary     = "Assessment engine for Japanese public-benefit eligibility (給付金・補助金・助成金・手当・控除)."
