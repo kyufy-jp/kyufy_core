@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-22
+
+### Fixed
+- **Requirement kinds now read as Japanese in user-facing explanations.** `kind` is an English
+  enum (`income`, `age`, …) and it was interpolated raw into otherwise-Japanese prose, so a verdict
+  card rendered "要綱「…」に基づき、**income**の要件を該当と判定しました。" — visibly broken Japanese
+  for the target users (§4). Both the `NullAdapter` (the offline/demo path, `KYUFY_LLM=null`) and
+  `GroundedAdapter#fallback_explanation` (the degradation path when a real LLM call fails) now use
+  the Japanese label: "…**所得**の要件を該当と判定しました。"
+
+### Added
+- `KyufyCore::Requirement::KIND_LABELS` and `Requirement.kind_label(kind)` — the canonical
+  English-enum → Japanese-label mapping (所得 / 年齢 / 居住地 / 世帯 / 就労 / その他), declared next to
+  `KINDS` so hosts and adapters share one vocabulary instead of each inventing its own.
+  Unrecognized kinds fall back to the raw value rather than nil. A test asserts `KIND_LABELS`
+  covers exactly `KINDS`, so adding a kind without a label fails loudly.
+
 ## [0.1.0] - 2026-07-21
 
 First tagged release. The assessment engine, JSON API, pgvector retrieval, swappable LLM/embedding
