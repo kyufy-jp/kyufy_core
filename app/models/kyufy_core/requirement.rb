@@ -11,6 +11,25 @@ module KyufyCore
     KINDS = %w[income age residence household employment other].freeze
     OPERATORS = %w[lt lte gt gte eq in exists].freeze
 
+    # Japanese label per kind. `kind` is an English enum (machine-readable), but it is also
+    # spoken aloud in user-facing Japanese prose — explanations, verdict cards — where a bare
+    # "income" reads as broken Japanese. Canonical here, next to KINDS, so hosts and adapters
+    # share one vocabulary instead of each inventing its own map.
+    KIND_LABELS = {
+      "income" => "所得",
+      "age" => "年齢",
+      "residence" => "居住地",
+      "household" => "世帯",
+      "employment" => "就労",
+      "other" => "その他"
+    }.freeze
+
+    # Japanese label for a kind (String or Symbol). Falls back to the raw value so an
+    # unrecognized kind degrades to something visible rather than nil.
+    def self.kind_label(kind)
+      KIND_LABELS.fetch(kind.to_s, kind.to_s)
+    end
+
     belongs_to :program, class_name: "KyufyCore::Program"
     belongs_to :source_document, class_name: "KyufyCore::SourceDocument", optional: true
 

@@ -13,12 +13,15 @@ module KyufyCore
         prefix = plain_language ? "【やさしい日本語】" : ""
         items.map do |item|
           label = VERDICT_LABELS.fetch(item[:rule_verdict], "要確認")
+          # `kind` is an English enum, but these sentences are read by Japanese users — a bare
+          # "income の要件" reads as broken Japanese, so use the canonical Japanese label.
+          kind_label = Requirement.kind_label(item[:kind])
           excerpt = item[:raw_text].to_s.strip
           explanation =
             if excerpt.empty?
-              "#{prefix}#{program.name}の要件（#{item[:kind]}）について、根拠となる要綱本文を特定できませんでした。"
+              "#{prefix}#{program.name}の要件（#{kind_label}）について、根拠となる要綱本文を特定できませんでした。"
             else
-              "#{prefix}要綱「#{excerpt}」に基づき、#{item[:kind]}の要件を#{label}と判定しました。"
+              "#{prefix}要綱「#{excerpt}」に基づき、#{kind_label}の要件を#{label}と判定しました。"
             end
 
           { id: item[:id], verdict: item[:rule_verdict], explanation: explanation }

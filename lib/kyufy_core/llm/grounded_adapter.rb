@@ -96,7 +96,8 @@ module KyufyCore
       def fallback_explanation(program, item)
         excerpt = item[:raw_text].to_s.strip
         if excerpt.empty?
-          "#{program.name}の要件（#{item[:kind]}）について判定しました。"
+          # Japanese label, not the raw English enum — this string is user-facing (§4).
+          "#{program.name}の要件（#{Requirement.kind_label(item[:kind])}）について判定しました。"
         else
           "要綱「#{excerpt}」に基づき判定しました。"
         end
