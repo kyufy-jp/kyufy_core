@@ -120,6 +120,8 @@ adapters, and five verbatim-cited real seed programs.
   Rails generator's placeholder, `Copyright TODO: Write your name` — a defective notice in a file
   the gemspec packages, on a repo whose whole positioning is public-good reuse. It now reads
   `Copyright (c) 2026 Daisuke Adachi`, and the README's License section links the file (SPEC §10).
+  `spec.authors` follows: it read `"kyufy"` (the project name, not a person) while the license names
+  a human — RubyGems would have credited an author who doesn't match the copyright holder.
 - **Gemspec URLs point at the real repo.** `homepage`, `source_code_uri`, and `changelog_uri` now
   resolve to `github.com/kyufy-jp/kyufy_core` — the org the project actually lives in (`kyufy` was
   taken) — so a published gem's links land somewhere real.
