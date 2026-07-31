@@ -21,11 +21,50 @@ pattern.
   which programs get assessed.
 - The `Assessor`: applicability filter → rule check → grounded LLM judgement → aggregation,
   with fail-safe defaults (ambiguity → 要確認, never a loose 該当).
-- Swappable **LLM** and **embedding** adapters (OpenCode / OpenAI-compatible / local /
+- `Geo`: free-text residence → JIS codes, 政令指定都市 ward ↔ parent-city hierarchy, and the
+  anti-omission rule — only status / date window / geography may exclude a program, and a
+  residence that can't be normalized passes through capped at 要確認 rather than being dropped.
+- Swappable **LLM** and **embedding** adapters (Anthropic / OpenAI-compatible / local /
   null-for-test).
+- An ingestion port (`Ingestion::ManualYamlAdapter` → `Importer`) plus **five real,
+  official-source seed programs** (12 requirements, each quoting its 要綱 verbatim).
 - A `Result` value object and an optional mountable JSON API.
 
 Auth, billing, and commercial UI live in a separate host ("shell") app — not here.
+[**kyufy-web**](https://github.com/kyufy-jp/kyufy-web) is the open reference host: the smallest
+complete example of mounting this engine (intake → assess → cited verdict cards, one controller
+and one screen).
+
+## Installation
+
+The gem is not on RubyGems yet — install from git:
+
+```ruby
+# Gemfile
+gem "kyufy_core", github: "kyufy-jp/kyufy_core"
+```
+
+```bash
+bin/rails kyufy_core:install:migrations
+bin/rails db:migrate
+```
+
+Mount the (optional) JSON API in the host app's routes:
+
+```ruby
+# config/routes.rb
+mount KyufyCore::Engine => "/kyufy_core"
+```
+
+Then load the packaged real-program seed (see [Seed data](#seed-data)):
+
+```ruby
+KyufyCore.import_dir   # db/seeds/programs/*.yml -> Program / Requirement / SourceDocument
+```
+
+Requires PostgreSQL with the [pgvector](https://github.com/pgvector/pgvector) extension; the
+migration creates a `vector(1536)` column, so change it together with `config.embedding_dim` if
+your embedding model has a different dimension.
 
 ## Usage
 
@@ -40,19 +79,28 @@ result = KyufyCore.assess(
     target: "individual",
     resident_tax_exempt: nil       # 住民税非課税世帯? true/false/nil — answered directly, not computed
   },
-  categories: %w[給付金 手当 控除],     # optional
+  categories: %w[給付金 手当 控除],     # optional; 給付金 補助金 助成金 手当 控除
   plain_language: false                 # true → explanations in やさしい日本語 (easy Japanese)
 )
 
 result.each do |program_result|
   program_result.program_id     # "prog_…" — a prefixed id, never a raw PK
+  program_result.program_name   # 制度名
   program_result.verdict        # :eligible / :ineligible / :needs_review
   program_result.reasons        # [{ requirement_id:, kind:, verdict:, explanation:, citation:,
-                                #    source_url:, license:, follow_up: }]
+                                #    citation_status:, source_url:, license:, follow_up: }]
+                                # citation_status = :present / :unavailable — no citation degrades
+                                #   the requirement to 要確認 (fail-safe), source_url still carries
+                                #   the official URL
+                                # kind = income / age / residence / household / employment / other
+                                #   (Requirement.kind_label gives the Japanese 所得 / 年齢 / …)
                                 # follow_up = a 逆質問 to resolve a 要確認 when a directly-answerable
-                                # Profile field (e.g. resident_tax_exempt) is unset; else nil
+                                #   Profile field (e.g. resident_tax_exempt) is unset; else nil
   program_result.disclaimer
 end
+
+result.as_json   # array of per-program hashes with string keys; the JSON API wraps it in
+                 # { "assessments" => [...] }
 ```
 
 ### 世帯 (household) assessment
@@ -66,7 +114,8 @@ result = KyufyCore.assess_household(
   categories: %w[給付金 手当],
   plain_language: false
 )
-# => a single KyufyCore::Result; income summed, household_size = member count.
+# => a single KyufyCore::Result; income summed, household_size = member count,
+#    resident_tax_exempt taken from the household (it is a 世帯-level status).
 # Per-member attributes (age, employment) resolve to 要確認 — use assess_batch for those.
 ```
 
@@ -84,13 +133,32 @@ results = KyufyCore.assess_batch(
 ### JSON API (optional mount)
 
 ```
-POST /kyufy_core/assessments            # single profile
-POST /kyufy_core/assessments/batch      # { profiles: [ {...}, {...} ] } -> { results: [...] }
-POST /kyufy_core/assessments/household  # { members: [ {...}, {...} ] } -> { assessments: [...] }
+POST /kyufy_core/assessments            # { profile: {...} }  -> { assessments: [...] }
+POST /kyufy_core/assessments/batch      # { profiles: [...] } -> { results: [{ assessments: [...] }, …] }
+POST /kyufy_core/assessments/household  # { members: [...] }  -> { assessments: [...] }
 ```
-with a `profile` (and optional `categories`, and `plain_language: true` for やさしい日本語
-explanations) returns the JSON mirror of the Ruby result — prefixed IDs only. This gem holds no
-auth; the host shell provides it.
+
+Each accepts optional `categories` and `plain_language: true` (やさしい日本語 explanations), and
+returns the JSON mirror of the Ruby result — prefixed IDs only. Only the seven Profile fields are
+permitted; anything else is dropped. This gem holds no auth; the host app provides it — see
+[kyufy-web](https://github.com/kyufy-jp/kyufy-web) for a working mount.
+
+## Seed data
+
+`db/seeds/programs/*.yml` holds **five real programs / 12 requirements** — one 国 (厚生労働省),
+three 東京都, one 杉並区, enough to exercise national / prefecture / municipality scoping in a
+single assessment. Every requirement quotes its 要綱 verbatim and links a live official page, and
+the source's license (e.g. `PDL1.0`) travels through to each reason.
+
+```ruby
+KyufyCore.import_dir                       # every *.yml in db/seeds/programs (the real set)
+KyufyCore.import_yaml(path)                # one YAML file
+KyufyCore.import_yaml(KyufyCore.seed_path) # db/seeds/tokyo_programs.yml — ILLUSTRATIVE fixture
+                                           # for the engine's own tests, not real 要綱 text
+```
+
+Importing always `create!`s, so re-running duplicates programs — clear the tables first (or import
+into a fresh database).
 
 ## Configuration
 
@@ -118,8 +186,9 @@ ship:
 c.llm_adapter = KyufyCore::LLM::AnthropicAdapter.new
 
 # OpenAI-compatible (OpenCode / OpenAI / local). Config via ENV: KYUFY_OPENAI_API_KEY,
-# KYUFY_OPENAI_BASE_URL, KYUFY_OPENAI_MODEL. For OpenCode, point base_url + model at its
-# endpoint — no code change. No SDK dependency (Net::HTTP).
+# KYUFY_OPENAI_BASE_URL (default https://api.openai.com/v1), KYUFY_OPENAI_MODEL (default
+# gpt-4o-mini). Any /chat/completions endpoint works — point base_url + model at it, no code
+# change. No SDK dependency (Net::HTTP).
 c.llm_adapter = KyufyCore::LLM::OpenAICompatibleAdapter.new
 ```
 
@@ -133,14 +202,14 @@ Semantic retrieval of 要綱 chunks (§6 evidence lookup) needs real vector embe
 
 ```ruby
 # OpenAI-compatible (OpenCode / OpenAI / local). Config via ENV: KYUFY_OPENAI_API_KEY,
-# KYUFY_OPENAI_BASE_URL, KYUFY_OPENAI_EMBEDDING_MODEL. The returned dimension is validated
-# against `embedding_dim` (and the vector() column width), so a model/column mismatch fails
-# loudly. No SDK dependency (Net::HTTP).
+# KYUFY_OPENAI_BASE_URL, KYUFY_OPENAI_EMBEDDING_MODEL (default text-embedding-3-small). The
+# returned dimension is validated against `embedding_dim` (and the vector() column width), so a
+# model/column mismatch fails loudly. No SDK dependency (Net::HTTP).
 c.embedding_adapter = KyufyCore::Embedding::OpenAICompatibleAdapter.new
 ```
 
 Note: Anthropic has no embeddings API, so embeddings run through an OpenAI-compatible endpoint.
-When the OpenCode key arrives it's a single config swap for **both** the LLM and embedding
+Moving to a different provider or gateway is one config swap for **both** the LLM and embedding
 adapters (base URL + key + model). The live smoke test
 (`test/kyufy_core/embedding/open_ai_compatible_live_smoke_test.rb`) is gated on
 `KYUFY_OPENAI_API_KEY` and skips cleanly without it.
@@ -170,7 +239,7 @@ or reject.
 ### Evidence relevance gate
 
 `config.evidence_max_distance` (default `nil` = off) drops pgvector fallback chunks whose cosine
-distance to the query exceeds the threshold, so a weak match becomes `citation_unavailable`
+distance to the query exceeds the threshold, so a weak match becomes `citation_status: :unavailable`
 (→ 要確認) rather than a misleading citation — the relevance-rating step from 源内's
 `kb_retrieve_and_rating`. Set e.g. `0.5` with a real embedding model.
 
@@ -182,21 +251,36 @@ distance to the query exceeds the threshold, so a weak match becomes `citation_u
 ## Development
 
 ```bash
-bin/rails db:prepare      # in test/dummy, via RAILS_ENV
-bin/rails test            # full suite on the Null adapters
+bundle install                        # installs into ./vendor/bundle
+RAILS_ENV=test bin/rails db:migrate   # engine migrations run against the bundled test/dummy app
+bin/rails test                        # full suite on the two Null adapters (no network, no keys)
+bundle exec rubocop -a                # rails-omakase style
 ```
+
+The dummy app's schema format is `:sql` (`test/dummy/db/structure.sql`) because pgvector's
+`vector()` column and its HNSW index don't round-trip through Ruby `schema.rb`. Three live smoke
+tests skip unless the matching key is in the environment — real Claude
+(`KYUFY_ANTHROPIC_API_KEY`), real embeddings (`KYUFY_OPENAI_API_KEY`), and
+`retrieval_grounding_live_smoke_test.rb`, which needs both and is the one path that runs real
+retrieval and real grounding together.
 
 ## Log hygiene note for host apps
 
-The engine ships `config/initializers/filter_parameters.rb`, which appends the Profile fields
+The engine ships `config/initializers/filter_parameters.rb`, which appends five Profile fields
 (`residence`, `prior_year_income_jpy`, `age`, `household_size`, `employment`) to the host app's
 `config.filter_parameters` so a profile POST never lands verbatim in request logs. This mutates
 the host's **global** filter list, so generic keys like `age` / `employment` will also mask the
 host's unrelated params of the same name. Over-filtering is the safe direction for this domain,
 so it's intentional — but hosts should be aware.
 
+`target` and `resident_tax_exempt` are not on that list; a host that logs params and cares about
+住民税非課税 status should add `resident_tax_exempt` to its own `filter_parameters`.
+
 ## References
 
+- [kyufy-web](https://github.com/kyufy-jp/kyufy-web) — the open reference host app (Rails 8.1,
+  Hotwire): a single 壁打ち chat screen that mounts this engine and renders cited verdict cards.
+  The smallest complete example of using `kyufy_core`.
 - [源内 / genai-ai-api](https://github.com/digital-go-jp/genai-ai-api) — Digital Agency's
   administrative RAG (MIT), the design lineage. kyufy follows its "answer grounded in cited source
   text" pattern (query → retrieve-and-rate → answer → reference), diverging deliberately: citations

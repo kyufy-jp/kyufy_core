@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **README matches the code, and links the reference host app.** `kyufy-web` is public now, so the
+  README points at [it](https://github.com/kyufy-jp/kyufy-web) — the only app that mounts this
+  engine, and the answer to "what does using this look like?". The rest is drift repair against the
+  real source: an **Installation** section (git Gemfile line — the gem isn't on RubyGems —
+  `kyufy_core:install:migrations`, the engine mount, `KyufyCore.import_dir`) and a **Seed data**
+  section, both of which were entirely undocumented; `citation_status` and `program_name` added to
+  the documented result shape (they ship, they were missing); the real JSON response shapes per
+  endpoint; adapter ENV defaults (`gpt-4o-mini`, `text-embedding-3-small`); the third live smoke
+  test (`retrieval_grounding_live_smoke_test.rb`); and dev commands that work
+  (`RAILS_ENV=test bin/rails db:migrate`, not `bin/rails db:prepare`). Also notes that
+  `resident_tax_exempt` is *not* in the engine's `filter_parameters` list, so a host that logs
+  params can add it.
+
 ## [0.1.1] - 2026-07-22
 
 ### Fixed
