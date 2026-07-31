@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Rails 8.1.3 → 8.1.3.1**, closing GHSA-xr9x-r78c-5hrm (critical): arbitrary file read and remote
+  code execution in Active Storage variant processing. This gem does not use Active Storage, but
+  `rails` is a runtime dependency, so the vulnerable code was in every resolved bundle. The bump
+  went unnoticed because **Dependabot alerts were disabled on the repository** — now enabled,
+  together with Dependabot security updates, so the next one opens a PR instead of sitting silent.
+  Lockfile bump only (`bundle update rails --conservative`); the gemspec's `>= 8.1, < 9` is
+  unchanged.
+
 ### Changed
 - **README matches the code, and links the reference host app.** `kyufy-web` is public now, so the
   README points at [it](https://github.com/kyufy-jp/kyufy-web) — the only app that mounts this
