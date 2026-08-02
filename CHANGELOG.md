@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`docker compose up` runs the assessment API with nothing installed.** PostgreSQL + pgvector and
+  the JSON API, migrated and seeded with the five real programs, so a team on any stack can POST a
+  profile and get 該当 / 非該当 / 要確認 with cited 要綱 evidence without a Ruby toolchain — the
+  practical barrier that kept this engine Ruby-only in effect. `compose.yaml`, `docker/Dockerfile`,
+  `docker/entrypoint.sh`, `docker/seed.rb`, `.dockerignore`, plus a README section. Development
+  configuration only: it boots the in-repo dummy host app with no auth and no TLS.
+  - Defaults to the Null adapters — no credentials, no network, deterministic embeddings.
+    `KYUFY_LLM=anthropic` + `KYUFY_ANTHROPIC_API_KEY` opts into real explanation prose; verdicts and
+    citations are rule-derived and identical either way (§6).
+  - Publishes **3100**, not 3000: `rails server` binds `127.0.0.1:3000` while Docker binds
+    `0.0.0.0:3000`, so both hold the port at once and `localhost:3000` silently reaches whatever
+    other Rails app is running. Override with `KYUFY_PORT` / `KYUFY_DB_PORT`.
+  - Seeds only into an empty database (`KyufyCore.import_dir` always `create!`s, so a warm volume
+    would duplicate every program). `docker compose down -v` to start over.
+  - Two guarded hooks in the dummy app's `development.rb`, both inert unless the container sets the
+    env var: skip the post-migration `structure.sql` dump (the image's `pg_dump` need not match the
+    server major version) and log to stdout (`docker compose logs`). `RAILS_ENV=test` — the
+    maintainer migrate/test path — never loads that file.
+
 ### Security
 - **Rails 8.1.3 → 8.1.3.1**, closing GHSA-xr9x-r78c-5hrm (critical): arbitrary file read and remote
   code execution in Active Storage variant processing. This gem does not use Active Storage, but

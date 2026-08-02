@@ -1,0 +1,59 @@
+# Demo stack for the assessment API: PostgreSQL + pgvector, plus the engine mounted in the
+# in-repo dummy host app. `docker compose up` gives any language an HTTP endpoint that returns
+# 該当 / 非該当 / 要確認 with cited 要綱 evidence — no Ruby, PostgreSQL, or pgvector on the host.
+#
+#   docker compose up --build
+#   curl -s localhost:3100/kyufy_core/assessments -H 'content-type: application/json' \
+#     -d '{"profile":{"age":42,"residence":"杉並区","household_size":3,
+#          "prior_year_income_jpy":900000,"target":"individual"}}'
+#
+# Development configuration only — no auth, no TLS. Do not expose it publicly.
+name: kyufy-core
+
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_USER: kyufy
+      POSTGRES_PASSWORD: kyufy
+      POSTGRES_DB: kyufy_core_demo
+    ports:
+      # 5433 on the host: a local PostgreSQL usually already owns 5432.
+      - "${KYUFY_DB_PORT:-5433}:5432"
+    volumes:
+      # PostgreSQL 18+ images want the mount one level up from the old .../data path, so the
+      # data lands in a major-version subdirectory (docker-library/postgres#1259).
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U kyufy -d kyufy_core_demo" ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # 3100, not 3000: `rails server` binds 127.0.0.1:3000 while Docker binds 0.0.0.0:3000, so
+      # both can hold the port at once and `localhost:3000` silently reaches the other app.
+      - "${KYUFY_PORT:-3100}:3000"
+    environment:
+      DATABASE_URL: postgres://kyufy:kyufy@db:5432/kyufy_core_demo
+      # Lets a sibling container reach the API as http://api:3000, not just via the host port.
+      RAILS_DEVELOPMENT_HOSTS: api,localhost,127.0.0.1
+      # Adapters default to the Null pair: deterministic, zero network, no credentials. Set
+      # KYUFY_LLM=anthropic + KYUFY_ANTHROPIC_API_KEY for real explanation prose — verdicts and
+      # citations are rule-derived either way, so they don't change (see docs/SPEC.md §6).
+      KYUFY_LLM: ${KYUFY_LLM:-}
+      KYUFY_ANTHROPIC_API_KEY: ${KYUFY_ANTHROPIC_API_KEY:-}
+      # Switching embeddings only takes effect on a fresh seed — chunk vectors are written at
+      # import time, so `docker compose down -v` first (a mixed-model index searches badly).
+      KYUFY_EMBEDDING: ${KYUFY_EMBEDDING:-}
+      KYUFY_OPENAI_API_KEY: ${KYUFY_OPENAI_API_KEY:-}
+
+volumes:
+  pgdata:

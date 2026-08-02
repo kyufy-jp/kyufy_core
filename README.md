@@ -66,6 +66,41 @@ Requires PostgreSQL with the [pgvector](https://github.com/pgvector/pgvector) ex
 migration creates a `vector(1536)` column, so change it together with `config.embedding_dim` if
 your embedding model has a different dimension.
 
+## Try it with no Ruby installed (Docker)
+
+If your app isn't Ruby — or you just want to see what an assessment looks like — talk to the
+engine over HTTP instead of mounting it. `docker compose up` brings up PostgreSQL + pgvector and
+the [JSON API](#json-api-optional-mount), migrated and seeded with the five real programs. Nothing
+is installed on your machine.
+
+```bash
+docker compose up --build   # first run builds the image and imports the seed (~1 min)
+```
+
+```bash
+curl -s localhost:3100/kyufy_core/assessments \
+  -H 'content-type: application/json' \
+  -d '{"profile":{"age":42,"residence":"杉並区","household_size":3,
+       "prior_year_income_jpy":900000,"target":"individual"}}'
+```
+
+All five programs come back assessed — national, 東京都, and 杉並区 alike — because only status /
+date window / geography may exclude one (§0). For the profile above, three are 要確認: the engine
+declines to guess rather than returning a loose 該当.
+
+- **Port 3100, not 3000.** `rails server` binds `127.0.0.1:3000` while Docker binds `0.0.0.0:3000`,
+  so both can hold port 3000 at once and `localhost:3000` would silently reach your other app.
+  Override with `KYUFY_PORT` (and `KYUFY_DB_PORT`, default 5433, to reach the database directly).
+- **No API keys, no network.** The demo runs the Null adapters, so embeddings are deterministic and
+  explanations are template prose. Verdicts, citations, and source URLs are rule-derived and are
+  identical with or without a model (§6) — the LLM only writes the explanation sentence.
+  For real prose: `KYUFY_LLM=anthropic KYUFY_ANTHROPIC_API_KEY=sk-… docker compose up`.
+- **Reset:** `docker compose down -v`. Re-importing into a warm database would duplicate programs,
+  so the entrypoint seeds only when the database is empty.
+- This is a **development** configuration — it boots the in-repo dummy host app (`test/dummy`) with
+  no auth and no TLS. Don't expose it publicly; see
+  [kyufy-web](https://github.com/kyufy-jp/kyufy-web) for a real host app.
+
 ## Usage
 
 ```ruby
