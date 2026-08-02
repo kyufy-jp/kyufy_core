@@ -1,0 +1,255 @@
+{
+  "_meta": {
+    "description": "The five real seed programs, parsed by the same adapter the engine imports with (Ingestion::ManualYamlAdapter), so this is what the assessment actually sees.",
+    "generated_from": "db/seeds/programs/*.yml",
+    "regenerate_with": "bundle exec rake data:export",
+    "raw_text": "Every requirement's raw_text is a VERBATIM excerpt from the linked official page — it is the citation the engine quotes. Never paraphrase it.",
+    "license": "A source document's license is null when the publisher states no open license. Null means 'unknown, assume all rights reserved', not 'free'.",
+    "freshness": "fetched_at records when the text was read. Programs change; re-fetch before relying on any of this.",
+    "schema": "data/README.md"
+  },
+  "programs": [
+    {
+      "source_file": "018_support.yml",
+      "name": "018サポート",
+      "authority": "東京都福祉局",
+      "jurisdiction": "prefecture",
+      "prefecture_code": "13",
+      "municipality_code": null,
+      "category": "給付金",
+      "target": "individual",
+      "official_url": "https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018",
+      "valid_from": "2026-04-01",
+      "valid_until": null,
+      "status": "active",
+      "source_documents": [
+        {
+          "title": "018サポート（令和8年度分）対象者について",
+          "url": "https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018",
+          "fetched_at": "2026-07-20",
+          "license": null,
+          "body": "018（ゼロイチハチ）サポート（令和8年度も引き続き実施しています）。都内に在住する18歳以下の子供に対し、一人当たり月額5,000円（年額最大6万円）を支給します。\n対象者について（令和8年度分の申請）：以下のいずれにも該当する子供が対象です。所得制限はありません。\n1. 0歳から18歳に達する日以後の最初の3月31日までの間にある方\n2. 令和8年度中に都内に住所を有する又は有していた方（原則）\n※各月1日時点の在住状況を確認します。\n"
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "age",
+          "operator": "lte",
+          "value": {
+            "threshold": 18
+          },
+          "raw_text": "0歳から18歳に達する日以後の最初の3月31日までの間にある方",
+          "document_ref": 0
+        },
+        {
+          "kind": "residence",
+          "operator": "eq",
+          "value": {
+            "eq": "都内",
+            "note": "住所要件は地理フィルタで判定：スコープ一致→該当、carve-out（ancestor/正規化失敗）→要確認"
+          },
+          "raw_text": "令和8年度中に都内に住所を有する又は有していた方（原則）",
+          "document_ref": 0
+        }
+      ]
+    },
+    {
+      "source_file": "kosodate_ouen_plus.yml",
+      "name": "子育て応援＋（プラス）",
+      "authority": "東京都福祉局",
+      "jurisdiction": "prefecture",
+      "prefecture_code": "13",
+      "municipality_code": null,
+      "category": "給付金",
+      "target": "individual",
+      "official_url": "https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018",
+      "valid_from": "2026-02-02",
+      "valid_until": "2027-04-01",
+      "status": "active",
+      "source_documents": [
+        {
+          "title": "子育て応援＋（プラス）対象者",
+          "url": "https://www.fukushi.metro.tokyo.lg.jp/kodomo/kosodate/018",
+          "fetched_at": "2026-07-20",
+          "license": null,
+          "body": "物価高などで実質賃金を圧迫する状況が続く中、子育て世帯を応援するため、東京アプリ生活応援事業の支援対象外である0歳から14歳の子供に対し、1人当たり11,000円を1回支給します。\n●対象者：令和8年2月2日～令和9年4月1日の期間内で、0歳から14歳までの都民（生年月日が平成24年4月2日から令和9年4月1日までの間にある者）。ただし、対象期間内に15歳を迎える都民を除く（東京アプリ生活応援事業の支援対象外の都民）。\n※上記期間中に出生した方、都内に転入した方、都外へ転出した方も対象となります。\n"
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "age",
+          "operator": "lte",
+          "value": {
+            "threshold": 14,
+            "note": "生年月日が平成24年4月2日から令和9年4月1日までの間にある者"
+          },
+          "raw_text": "令和8年2月2日～令和9年4月1日の期間内で、0歳から14歳までの都民",
+          "document_ref": 0
+        },
+        {
+          "kind": "residence",
+          "operator": "eq",
+          "value": {
+            "eq": "都内"
+          },
+          "raw_text": "上記期間中に出生した方、都内に転入した方、都外へ転出した方も対象となります",
+          "document_ref": 0
+        }
+      ]
+    },
+    {
+      "source_file": "kyoiku_kunren.yml",
+      "name": "一般教育訓練給付金",
+      "authority": "厚生労働省",
+      "jurisdiction": "national",
+      "prefecture_code": null,
+      "municipality_code": null,
+      "category": "給付金",
+      "target": "individual",
+      "official_url": "https://www.hellowork.mhlw.go.jp/insurance/insurance_education.html",
+      "valid_from": null,
+      "valid_until": null,
+      "status": "active",
+      "source_documents": [
+        {
+          "title": "一般教育訓練給付金 — 支給対象者",
+          "url": "https://www.hellowork.mhlw.go.jp/insurance/insurance_education.html",
+          "fetched_at": "2026-07-20",
+          "license": "PDL1.0",
+          "body": "一般教育訓練給付金は、雇用の安定と再就職の促進を支援するため、一定の条件を満たす雇用保険の被保険者または被保険者であった方（離職者）が、厚生労働大臣の指定する一般教育訓練を受講し、修了した場合は、受講者が支払った教育訓練経費の20％（上限10万円）をハローワークから支給します。\n（支給対象者）\n(1) 雇用保険の一般被保険者・高年齢被保険者等：一般教育訓練の受講開始日に、雇用保険に加入していた期間が3年以上\n(2) 雇用保険の一般被保険者・高年齢被保険者等であった方：雇用保険の資格を喪失した日（離職日の翌日）以降、受講開始日までが1年以内であり、かつ、雇用保険に加入していた期間が3年以上\n"
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "employment",
+          "operator": "eq",
+          "value": {
+            "measure": "雇用保険被保険者期間",
+            "note": "要件は「雇用保険の被保険者または被保険者であった方（離職者）」かつ「被保険者期間3年以上（初回1年以上）」。 後者は Profile に項目がなく検証できないため、被雇用者でも 該当 とは断定せず 要確認 に留める（fail-safe）。 self_employed は 被保険者ではないので 非該当。measure 分岐は RuleCheck を参照。"
+          },
+          "raw_text": "雇用保険の被保険者または被保険者であった方（離職者）",
+          "document_ref": 0
+        }
+      ]
+    },
+    {
+      "source_file": "suginami_aircon.yml",
+      "name": "杉並区エアコン購入費助成",
+      "authority": "杉並区",
+      "jurisdiction": "municipality",
+      "prefecture_code": "13",
+      "municipality_code": "13115",
+      "category": "助成金",
+      "target": "individual",
+      "official_url": "https://www.city.suginami.tokyo.jp/s042/news/25347.html",
+      "valid_from": "2026-06-01",
+      "valid_until": "2026-09-30",
+      "status": "active",
+      "source_documents": [
+        {
+          "title": "杉並区エアコン購入費の助成 — 助成の対象について",
+          "url": "https://www.city.suginami.tokyo.jp/s042/news/25347.html",
+          "fetched_at": "2026-07-20",
+          "license": null,
+          "body": "経済的な理由から自宅用のエアコンの購入が困難な世帯を対象に、夏季の熱中症による健康被害を予防することを目的として、エアコンの購入及び設置に要する費用の一部を助成します。\n対象世帯：令和7年度もしくは令和8年度の住民税非課税世帯・住民税均等割のみ課税世帯、令和7年度児童扶養手当受給世帯のいずれかに該当し、本事業の申請時において杉並区に住民登録がある世帯で、居住する住宅において以下のいずれかの条件に該当する世帯（生活保護受給世帯を除く）。\n・自宅にエアコンが1台もない世帯\n・設置されているエアコンの全てが、故障等により冷房機能の使える状態にない世帯、もしくは製造から15年以上経過している世帯（冷房機能の使用可否は問わない）\n助成内容：区内販売店からの購入の場合、上限100,000円。交付申請期間は令和8年6月1日から9月30日まで。\n"
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "income",
+          "operator": "lte",
+          "value": {
+            "measure": "住民税非課税",
+            "note": "住民税非課税/均等割のみ課税世帯、または令和7年度児童扶養手当受給世帯のいずれか（OR）。数値の所得基準は公式ページに記載なし → 要確認に degrade。"
+          },
+          "raw_text": "住民税非課税世帯・住民税均等割のみ課税世帯、令和7年度児童扶養手当受給世帯のいずれかに該当し",
+          "document_ref": 0
+        },
+        {
+          "kind": "other",
+          "operator": "eq",
+          "value": {
+            "eq": "該当",
+            "note": "エアコン未設置 or 冷房不可/製造15年以上（プロフィールから判定不可 → 要確認）"
+          },
+          "raw_text": "自宅にエアコンが1台もない世帯",
+          "document_ref": 0
+        },
+        {
+          "kind": "residence",
+          "operator": "eq",
+          "value": {
+            "eq": "杉並区"
+          },
+          "raw_text": "本事業の申請時において杉並区に住民登録がある世帯",
+          "document_ref": 0
+        }
+      ]
+    },
+    {
+      "source_file": "tokyo_zeroemi_points.yml",
+      "name": "東京ゼロエミポイント",
+      "authority": "東京都",
+      "jurisdiction": "prefecture",
+      "prefecture_code": "13",
+      "municipality_code": null,
+      "category": "助成金",
+      "target": "individual",
+      "official_url": "https://www.tz-points.jp/system/",
+      "valid_from": "2024-10-01",
+      "valid_until": "2027-03-31",
+      "status": "active",
+      "source_documents": [
+        {
+          "title": "東京ゼロエミポイント 事業概要 — 対象となる方",
+          "url": "https://www.tz-points.jp/system/",
+          "fetched_at": "2026-07-20",
+          "license": null,
+          "body": "「家庭のゼロエミッション行動推進事業」とは、設置済みのエアコン・冷蔵庫・給湯器・LED照明器具を除く照明器具を、省エネ性能の高いエアコン・冷蔵庫・給湯器・LED照明器具に買替えた都民に対して、東京ゼロエミポイント相当分を付与する、東京都が実施する事業です。\n東京ゼロエミポイントと、都の同種の助成金等は併用できません。\n助成金の申請は本事業に登録した事業者（販売店）が行います。個人の方は申請できませんのでご注意ください。\n対象となる方（申請には条件があります）：\n条件1 購入店舗：事前に登録された事業者（店舗）にて購入する方。\n条件2 購入者・住所：都内に住所を有する個人であって、その住所を公的な書類（免許証等）で証明できる方。\n条件3 買い替え：住宅に設置済みのエアコン、冷蔵庫、給湯器、照明器具を、省エネルギー性能の高い新品の対象家電等に買替えた方。※一部、新規購入も対象\n条件4 設置場所：購入した対象家電等を都内の住宅に設置する方。\nポイント交付の対象となる販売期間：令和6年10月1日〜令和9年（2027年）3月31日まで（★3以上エアコンの高齢者・障害者向けは令和7年8月30日〜）。\n"
+        }
+      ],
+      "requirements": [
+        {
+          "kind": "residence",
+          "operator": "eq",
+          "value": {
+            "eq": "都内",
+            "note": "住所要件は地理フィルタで判定：スコープ一致→該当、carve-out（ancestor/正規化失敗）→要確認。"
+          },
+          "raw_text": "都内に住所を有する個人であって、その住所を公的な書類（免許証等）で証明できる方。",
+          "document_ref": 0
+        },
+        {
+          "kind": "other",
+          "operator": "eq",
+          "value": {
+            "eq": "該当",
+            "note": "事前登録された販売店での購入が要件。Profile から判定不可 → 要確認。"
+          },
+          "raw_text": "事前に登録された事業者（店舗）にて購入する方。",
+          "document_ref": 0
+        },
+        {
+          "kind": "other",
+          "operator": "eq",
+          "value": {
+            "eq": "該当",
+            "note": "設置済み家電の省エネ買替え（一部新規購入も対象）。Profile から判定不可 → 要確認。"
+          },
+          "raw_text": "住宅に設置済みのエアコン、冷蔵庫、給湯器、照明器具を、省エネルギー性能の高い新品の対象家電等に買替えた方。",
+          "document_ref": 0
+        },
+        {
+          "kind": "other",
+          "operator": "eq",
+          "value": {
+            "eq": "該当",
+            "note": "対象家電を都内の住宅に設置する要件。Profile から判定不可 → 要確認。"
+          },
+          "raw_text": "購入した対象家電等を都内の住宅に設置する方。",
+          "document_ref": 0
+        }
+      ]
+    }
+  ]
+}

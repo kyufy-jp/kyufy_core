@@ -57,4 +57,17 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # --- Docker demo hooks (compose.yaml / docker/Dockerfile) -------------------------------
+  # Both are inert unless the container sets these env vars; a local `bin/rails server` is
+  # unaffected, and RAILS_ENV=test (the maintainer migrate/test path) never reaches this file.
+
+  # The image's pg_dump need not match the server's major version, and the demo container has
+  # no reason to rewrite structure.sql — skip the post-migration dump rather than fail on it.
+  config.active_record.dump_schema_after_migration = ENV["KYUFY_SKIP_SCHEMA_DUMP"] != "1"
+
+  # Without a TTY, log/development.log is invisible to `docker compose logs`.
+  if ENV["RAILS_LOG_TO_STDOUT"].present?
+    config.logger = ActiveSupport::Logger.new($stdout)
+  end
 end

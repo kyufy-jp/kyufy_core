@@ -1,0 +1,19 @@
+.git
+.github
+.gitignore
+
+# Host-side bundle — the image installs its own gems (BUNDLE_PATH=/usr/local/bundle),
+# and the native extensions here are built for macOS/arm64, not the image's Debian.
+vendor/bundle
+.bundle
+
+log/*
+tmp/*
+test/dummy/log/*
+test/dummy/tmp/*
+
+# Maintainer-local paths (gitignored, but the build context would still pick it up).
+docs/LOCAL.md
+.env*
+
+.DS_Store

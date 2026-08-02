@@ -66,6 +66,54 @@ Requires PostgreSQL with the [pgvector](https://github.com/pgvector/pgvector) ex
 migration creates a `vector(1536)` column, so change it together with `config.embedding_dim` if
 your embedding model has a different dimension.
 
+## Try it with no Ruby installed (Docker)
+
+If your app isn't Ruby — or you just want to see what an assessment looks like — talk to the
+engine over HTTP instead of mounting it. `docker compose up` brings up PostgreSQL + pgvector and
+the [JSON API](#json-api-optional-mount), migrated and seeded with the five real programs. Nothing
+is installed on your machine.
+
+```bash
+docker compose up --build   # first run builds the image and imports the seed (~1 min)
+```
+
+```bash
+curl -s localhost:3100/kyufy_core/assessments \
+  -H 'content-type: application/json' \
+  -d '{"profile":{"age":42,"residence":"杉並区","household_size":3,
+       "prior_year_income_jpy":900000,"target":"individual"}}'
+```
+
+All five programs come back assessed — national, 東京都, and 杉並区 alike — because only status /
+date window / geography may exclude one (§0). For the profile above, three are 要確認: the engine
+declines to guess rather than returning a loose 該当.
+
+- **Port 3100, not 3000.** `rails server` binds `127.0.0.1:3000` while Docker binds `0.0.0.0:3000`,
+  so both can hold port 3000 at once and `localhost:3000` would silently reach your other app.
+  Override with `KYUFY_PORT` (and `KYUFY_DB_PORT`, default 5433, to reach the database directly).
+- **No API keys, no network.** The demo runs the Null adapters, so embeddings are deterministic and
+  explanations are template prose. Verdicts, citations, and source URLs are rule-derived and are
+  identical with or without a model (§6) — the LLM only writes the explanation sentence.
+  For real prose: `KYUFY_LLM=anthropic KYUFY_ANTHROPIC_API_KEY=sk-… docker compose up`.
+- **Reset:** `docker compose down -v`. Re-importing into a warm database would duplicate programs,
+  so the entrypoint seeds only when the database is empty.
+- This is a **development** configuration — it boots the in-repo dummy host app (`test/dummy`) with
+  no auth and no TLS. Don't expose it publicly; see
+  [kyufy-web](https://github.com/kyufy-jp/kyufy-web) for a real host app.
+
+## Reusing this without adopting the gem
+
+Two parts of this repo are useful on their own, and neither requires Ruby:
+
+- **[`data/`](data/README.md)** — the JIS geography tables and the five seed programs as plain
+  JSON, with the schema documented. Generated from `KyufyCore::Geo` and `db/seeds/programs/*.yml`,
+  with a test that fails if they drift, so the export matches what the engine assesses with.
+  Regenerate with `bundle exec rake data:export`.
+- **[`docs/INVARIANTS.md`](docs/INVARIANTS.md)** — the eleven rules this engine holds (anti-omission,
+  retrieval-is-evidence-only, no-citation-no-該当, deterministic verdicts, …), each with why it
+  exists and where it's enforced. If you're building an eligibility assessor in another language,
+  this is the part worth copying; the code isn't.
+
 ## Usage
 
 ```ruby
@@ -159,6 +207,11 @@ KyufyCore.import_yaml(KyufyCore.seed_path) # db/seeds/tokyo_programs.yml — ILL
 
 Importing always `create!`s, so re-running duplicates programs — clear the tables first (or import
 into a fresh database).
+
+The same five programs are exported to [`data/programs.json`](data/README.md#programsjson) for
+readers outside Ruby, along with the field-by-field schema, the `value` shapes per operator, and
+the provenance conventions — why `raw_text` must stay verbatim and why `license: null` means
+*unknown*, not *free*.
 
 ## Configuration
 

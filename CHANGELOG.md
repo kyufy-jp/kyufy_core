@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`data/` — the reusable datasets, without Ruby.** The two things here worth having even if you
+  never run the engine were locked in Ruby: `Geo`'s JIS tables (constants) and the five seed
+  programs (YAML the engine's own adapter parses). Both now export to plain JSON — `data/geo.json`,
+  `data/programs.json` — with `data/README.md` documenting the schema field by field, the `value`
+  shapes per operator, the three `measure` special cases, and the provenance conventions (`raw_text`
+  is verbatim because it's the citation; `license: null` means *unknown*, not *free*).
+  - **Generated, with drift enforced.** `bundle exec rake data:export` regenerates from the
+    sources, which stay authoritative; `test/kyufy_core/data_export_test.rb` fails when the
+    committed files no longer match. A stale export would hand outside consumers a different
+    geography or a different 要綱 excerpt than the engine uses — silently.
+  - The exporter (`lib/kyufy_core/data_export.rb`) is deliberately **not** required from
+    `lib/kyufy_core.rb`: nothing at runtime needs it, and the exports aren't packaged in the gem.
+  - The export carries its own caveats in a `_meta` block, so they travel with a downloaded file:
+    the municipality table is partial (not national), codes are strings because leading zeros are
+    significant, and ambiguous bare ward names (`中央区`, `北区`) are absent on purpose.
+- **`docs/INVARIANTS.md` — the eleven rules, extracted.** The transferable part of this engine
+  isn't the Rails code; it's the design discipline, and it was scattered across source comments
+  and `docs/SPEC.md`. Now stated once, each rule with why it exists, what it prevents, and where
+  it's enforced: anti-omission, retrieval-is-evidence-only, unresolvable residence passes through,
+  ambiguity → 要確認, no-citation-no-該当, verbatim citations, deterministic verdicts (the model
+  writes prose only), aggregation precedence, caps as synthesized reasons, 逆質問 over "unclear",
+  and the always-attached disclaimer. Written for someone reimplementing this in another language.
+- **`docker compose up` runs the assessment API with nothing installed.** PostgreSQL + pgvector and
+  the JSON API, migrated and seeded with the five real programs, so a team on any stack can POST a
+  profile and get 該当 / 非該当 / 要確認 with cited 要綱 evidence without a Ruby toolchain — the
+  practical barrier that kept this engine Ruby-only in effect. `compose.yaml`, `docker/Dockerfile`,
+  `docker/entrypoint.sh`, `docker/seed.rb`, `.dockerignore`, plus a README section. Development
+  configuration only: it boots the in-repo dummy host app with no auth and no TLS.
+  - Defaults to the Null adapters — no credentials, no network, deterministic embeddings.
+    `KYUFY_LLM=anthropic` + `KYUFY_ANTHROPIC_API_KEY` opts into real explanation prose; verdicts and
+    citations are rule-derived and identical either way (§6).
+  - Publishes **3100**, not 3000: `rails server` binds `127.0.0.1:3000` while Docker binds
+    `0.0.0.0:3000`, so both hold the port at once and `localhost:3000` silently reaches whatever
+    other Rails app is running. Override with `KYUFY_PORT` / `KYUFY_DB_PORT`.
+  - Seeds only into an empty database (`KyufyCore.import_dir` always `create!`s, so a warm volume
+    would duplicate every program). `docker compose down -v` to start over.
+  - Two guarded hooks in the dummy app's `development.rb`, both inert unless the container sets the
+    env var: skip the post-migration `structure.sql` dump (the image's `pg_dump` need not match the
+    server major version) and log to stdout (`docker compose logs`). `RAILS_ENV=test` — the
+    maintainer migrate/test path — never loads that file.
+
 ### Security
 - **Rails 8.1.3 → 8.1.3.1**, closing GHSA-xr9x-r78c-5hrm (critical): arbitrary file read and remote
   code execution in Active Storage variant processing. This gem does not use Active Storage, but
