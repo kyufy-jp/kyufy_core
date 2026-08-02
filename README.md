@@ -101,6 +101,19 @@ declines to guess rather than returning a loose 該当.
   no auth and no TLS. Don't expose it publicly; see
   [kyufy-web](https://github.com/kyufy-jp/kyufy-web) for a real host app.
 
+## Reusing this without adopting the gem
+
+Two parts of this repo are useful on their own, and neither requires Ruby:
+
+- **[`data/`](data/README.md)** — the JIS geography tables and the five seed programs as plain
+  JSON, with the schema documented. Generated from `KyufyCore::Geo` and `db/seeds/programs/*.yml`,
+  with a test that fails if they drift, so the export matches what the engine assesses with.
+  Regenerate with `bundle exec rake data:export`.
+- **[`docs/INVARIANTS.md`](docs/INVARIANTS.md)** — the eleven rules this engine holds (anti-omission,
+  retrieval-is-evidence-only, no-citation-no-該当, deterministic verdicts, …), each with why it
+  exists and where it's enforced. If you're building an eligibility assessor in another language,
+  this is the part worth copying; the code isn't.
+
 ## Usage
 
 ```ruby
@@ -194,6 +207,11 @@ KyufyCore.import_yaml(KyufyCore.seed_path) # db/seeds/tokyo_programs.yml — ILL
 
 Importing always `create!`s, so re-running duplicates programs — clear the tables first (or import
 into a fresh database).
+
+The same five programs are exported to [`data/programs.json`](data/README.md#programsjson) for
+readers outside Ruby, along with the field-by-field schema, the `value` shapes per operator, and
+the provenance conventions — why `raw_text` must stay verbatim and why `license: null` means
+*unknown*, not *free*.
 
 ## Configuration
 
