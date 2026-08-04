@@ -208,22 +208,23 @@ value: {}          # プロフィールにその項目が入力されている�
 要確認どまり**になります。デモとしては見栄えが悪いので、制度を足すときは地理テーブルも
 一緒に足してください。
 
-ホストアプリの初期化ファイルに置きます（`config/initializers/kyufy_geo.rb` など）。
+ホストアプリの初期化ファイルに置きます（`config/initializers/kyufy_core.rb` など）。
 
 ```ruby
-# 定数が freeze されているため、差し替えの形をとります。
-module KyufyCore
-  module Geo
-    original = MUNICIPALITIES
-    remove_const(:MUNICIPALITIES)
-    MUNICIPALITIES = original.merge(
-      "三鷹市"   => "13204",
-      "八王子市" => "13201",
-      "町田市"   => "13209"
-    ).freeze
-  end
+KyufyCore.configure do |c|
+  c.extra_municipalities = {
+    "三鷹市"   => "13204",
+    "八王子市" => "13201",
+    "町田市"   => "13209"
+  }
 end
 ```
+
+- **コードは必ず文字列**です。数値や桁数違いを渡すと、その場で `ArgumentError` になります
+  （黙って正規化に失敗して全部要確認になるより、起動時に落ちたほうが良いため）。
+- ここでの指定は同梱テーブルより優先されます。同梱の値が古い・誤っている場合の上書きにも使えます。
+- 同梱の `KyufyCore::Geo::MUNICIPALITIES` 自体は変わりません（`data/geo.json` の書き出し内容も
+  変わりません）。あくまでホストアプリ側の追加です。
 
 コードは[総務省の全国地方公共団体コード](https://www.soumu.go.jp/denshijiti/code.html)から
 引けます（5桁のうち先頭2桁が都道府県コード。**検査数字を含む6桁ではなく5桁**を使います）。
@@ -237,7 +238,8 @@ end
 
 これは意図的な仕様です。**間違った自治体に一致させるくらいなら、正規化に失敗して要確認に
 落とすほうが良い**という判断です（[INVARIANTS.md](INVARIANTS.md) ルール3）。
-自分で足すときも同じ性質を保ってください。
+`extra_municipalities` で足すときも同じ性質を保ってください
+（`"北区"` ではなく `"北区（東京都）" => "13117"` のように書く）。
 
 なお、住所を自由入力させると正規化の失敗が増えます。UI側では
 [`data/geo.json`](../data/geo.json) を使って**選択式にする**のが確実です。

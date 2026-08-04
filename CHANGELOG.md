@@ -24,11 +24,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Documents two traps found while writing it: `kind: other` with `operator: exists` evaluates to
     **非該当**, not 要確認 (the Profile has no `other` field, and `exists` reads absence as failure)
     — use `eq`; and JIS codes written unquoted in YAML lose their leading zero.
-  - Covers extending `Geo::MUNICIPALITIES`, which ships with 東京23区 + さいたま市 only. A program
-    for 三鷹市 or 八王子市 otherwise leaves every local resident's address unnormalizable and caps
-    the whole assessment at 要確認. The `remove_const` + `merge` initializer is ugly, and a
-    configuration hook would be better; documenting the working mechanism beats leaving people to
-    discover the frozen constant themselves.
+  - Covers extending the JIS municipality table via the new `config.extra_municipalities` below.
+- **`config.extra_municipalities` — add municipalities the packaged JIS table doesn't carry.**
+  `Geo` ships 東京23区 + さいたま市 only (a national table belongs to ingestion), and the frozen
+  constant left hosts monkey-patching it. Adding a program for 三鷹市 or 八王子市 without extending
+  the table leaves every local resident's address unnormalizable, so carve-out (a) caps their whole
+  assessment at 要確認 — the engine looks broken precisely where a host is most likely to start.
+  ```ruby
+  KyufyCore.configure { |c| c.extra_municipalities = { "三鷹市" => "13204" } }
+  ```
+  - **Validated at assignment, not at lookup.** A numeric or wrong-length code raises
+    `ArgumentError` immediately, naming the leading-zero trap (`"01100"`, not `01100`, which Ruby
+    reads as octal). The alternative is a silent normalization failure — invisible degradation is
+    the failure mode this engine exists to prevent.
+  - Entries win over the packaged ones, so a stale or wrong code can be corrected without a fork.
+    `Geo::MUNICIPALITIES` itself is untouched, so `data/geo.json` and its drift test still describe
+    the packaged data, and one host's additions can't leak into the export.
+  - `Geo.municipalities` merges lazily and caches on the config hash's object identity, so
+    reassignment takes effect at once and steady-state lookups allocate nothing. `geo.rb` still
+    loads standalone (`data_export.rb` requires it without Rails or configuration).
 - **`data/` — the reusable datasets, without Ruby.** The two things here worth having even if you
   never run the engine were locked in Ruby: `Geo`'s JIS tables (constants) and the five seed
   programs (YAML the engine's own adapter parses). Both now export to plain JSON — `data/geo.json`,

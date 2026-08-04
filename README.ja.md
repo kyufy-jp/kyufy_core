@@ -185,8 +185,21 @@ POST /kyufy_core/assessments/household  # { members: [...] }  -> { assessments: 
 bin/rails runner 'KyufyCore.import_yaml("db/seeds/programs/your_program.yml")'
 ```
 
-フィールドの意味、`value` の書き方、要綱の引用ルール、自分の自治体をJISコード表に足す方法は
+フィールドの意味、`value` の書き方、要綱の引用ルールは
 **[docs/ADDING_PROGRAMS.ja.md](docs/ADDING_PROGRAMS.ja.md)** にまとまっています。慣れれば1制度30分ほどです。
+
+同梱のJISコード表は**東京23区とさいたま市だけ**です。三鷹市・八王子市などの制度を足すときは、
+地理テーブルも一緒に足してください。足さないと、その自治体の住民の住所が正規化できず、
+判定が全部要確認どまりになります。
+
+```ruby
+KyufyCore.configure do |c|
+  c.extra_municipalities = { "三鷹市" => "13204", "八王子市" => "13201" }
+end
+```
+
+コードは文字列で渡します（先頭の0が意味を持つため）。数値や桁数違いは起動時に `ArgumentError`
+になります。
 
 ---
 

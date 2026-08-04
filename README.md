@@ -228,8 +228,16 @@ KyufyCore.configure do |c|
   c.llm_adapter       = MyLLMAdapter.new         # default: KyufyCore::LLM::NullAdapter
   c.embedding_adapter = MyEmbeddingAdapter.new   # default: KyufyCore::Embedding::NullAdapter
   c.embedding_dim     = 1536                      # must match the migration
+  c.extra_municipalities = { "三鷹市" => "13204" } # JIS codes the packaged Geo table lacks
 end
 ```
+
+`extra_municipalities` matters as soon as you add a program outside the packaged table (東京23区 +
+さいたま市): without it, every resident of that municipality fails to normalize and the
+anti-omission rule caps their whole assessment at 要確認. Codes are Strings — leading zeros are
+significant, so a numeric or wrong-length code raises `ArgumentError` at assignment rather than
+degrading silently. Entries win over the packaged ones, and the packaged constant (and
+`data/geo.json`) is left untouched.
 
 Tests run entirely on the two Null adapters — deterministic, free, and zero network calls.
 

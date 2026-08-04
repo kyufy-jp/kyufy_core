@@ -44,6 +44,7 @@ Three things about this data are decisions, not omissions:
 - **`municipalities` is partial, not national.** It covers the 東京都特別区 and さいたま市 + its 10
   wards — what the seed and tests need. A full national table belongs to ingestion, not here. So a
   lookup miss means *"not in this table"*, never *"no such city"*; treat it as unknown, not absent.
+  Ruby hosts extend it with `config.extra_municipalities` (which does not change this export).
 - **Ambiguous bare ward names are deliberately excluded.** `中央区` and `北区` are missing because
   several cities have one, so a bare name can't be resolved. The engine treats the miss as a
   normalization failure and degrades to 要確認 rather than silently matching the wrong
