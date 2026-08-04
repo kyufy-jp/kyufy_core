@@ -13,6 +13,9 @@ pattern.
 > **これは参考判定です。最終確認は各制度の公式窓口で行ってください。**
 > This is a reference assessment only. Always confirm at each program's official window.
 
+日本語の README は [**README.ja.md**](README.ja.md)、制度データの追加手順は
+[**docs/ADDING_PROGRAMS.ja.md**](docs/ADDING_PROGRAMS.ja.md) にあります。
+
 ## What's in this gem (the open core)
 
 - Data models for programs (制度) and requirements (要件), with the exact 要綱 excerpt kept
@@ -207,6 +210,11 @@ KyufyCore.import_yaml(KyufyCore.seed_path) # db/seeds/tokyo_programs.yml — ILL
 
 Importing always `create!`s, so re-running duplicates programs — clear the tables first (or import
 into a fresh database).
+
+Five programs is a starting kit, not a dataset — the engine is designed to have programs added.
+[**docs/ADDING_PROGRAMS.ja.md**](docs/ADDING_PROGRAMS.ja.md) (Japanese) walks through the YAML
+format field by field, the `value` shapes per operator, the verbatim-citation rule, and how to
+extend the JIS municipality table for a city the packaged `Geo` table doesn't carry.
 
 The same five programs are exported to [`data/programs.json`](data/README.md#programsjson) for
 readers outside Ruby, along with the field-by-field schema, the `value` shapes per operator, and

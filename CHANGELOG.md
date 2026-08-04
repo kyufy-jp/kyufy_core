@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Japanese onboarding docs.** The engine assesses Japanese public benefits and quotes Japanese
+  要綱, but every word telling you how to use it was in English — a real barrier for the people
+  most likely to build on it.
+  - **`README.ja.md`** — a five-minute adoption decision. What the engine does and, more usefully,
+    what it does not: no UI, no LLM-decided verdicts, and **not a program database** (the packaged
+    five are a starting kit). States the stack constraint plainly — Rails + PostgreSQL + pgvector,
+    so it cannot run on Cloudflare Workers alone; use the Docker JSON API from another host
+    instead. Carries the licensing warning about the bundled 要綱 text (`license: null` means
+    *unknown*, not *free*) up front rather than in a footnote.
+  - **`docs/ADDING_PROGRAMS.ja.md`** — the guide that makes the seed a starting kit instead of a
+    ceiling. Field-by-field YAML reference, `value` shapes per operator, the three `measure`
+    special cases, why `raw_text` must be verbatim, and the import/verify loop (including
+    `docker compose cp` for the container path, since the image copies the repo at build time).
+    Documents two traps found while writing it: `kind: other` with `operator: exists` evaluates to
+    **非該当**, not 要確認 (the Profile has no `other` field, and `exists` reads absence as failure)
+    — use `eq`; and JIS codes written unquoted in YAML lose their leading zero.
+  - Covers extending `Geo::MUNICIPALITIES`, which ships with 東京23区 + さいたま市 only. A program
+    for 三鷹市 or 八王子市 otherwise leaves every local resident's address unnormalizable and caps
+    the whole assessment at 要確認. The `remove_const` + `merge` initializer is ugly, and a
+    configuration hook would be better; documenting the working mechanism beats leaving people to
+    discover the frozen constant themselves.
 - **`data/` — the reusable datasets, without Ruby.** The two things here worth having even if you
   never run the engine were locked in Ruby: `Geo`'s JIS tables (constants) and the five seed
   programs (YAML the engine's own adapter parses). Both now export to plain JSON — `data/geo.json`,
