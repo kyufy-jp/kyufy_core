@@ -13,6 +13,9 @@ pattern.
 > **これは参考判定です。最終確認は各制度の公式窓口で行ってください。**
 > This is a reference assessment only. Always confirm at each program's official window.
 
+日本語の README は [**README.ja.md**](README.ja.md)、制度データの追加手順は
+[**docs/ADDING_PROGRAMS.ja.md**](docs/ADDING_PROGRAMS.ja.md) にあります。
+
 ## What's in this gem (the open core)
 
 - Data models for programs (制度) and requirements (要件), with the exact 要綱 excerpt kept
@@ -208,6 +211,11 @@ KyufyCore.import_yaml(KyufyCore.seed_path) # db/seeds/tokyo_programs.yml — ILL
 Importing always `create!`s, so re-running duplicates programs — clear the tables first (or import
 into a fresh database).
 
+Five programs is a starting kit, not a dataset — the engine is designed to have programs added.
+[**docs/ADDING_PROGRAMS.ja.md**](docs/ADDING_PROGRAMS.ja.md) (Japanese) walks through the YAML
+format field by field, the `value` shapes per operator, the verbatim-citation rule, and how to
+extend the JIS municipality table for a city the packaged `Geo` table doesn't carry.
+
 The same five programs are exported to [`data/programs.json`](data/README.md#programsjson) for
 readers outside Ruby, along with the field-by-field schema, the `value` shapes per operator, and
 the provenance conventions — why `raw_text` must stay verbatim and why `license: null` means
@@ -220,8 +228,16 @@ KyufyCore.configure do |c|
   c.llm_adapter       = MyLLMAdapter.new         # default: KyufyCore::LLM::NullAdapter
   c.embedding_adapter = MyEmbeddingAdapter.new   # default: KyufyCore::Embedding::NullAdapter
   c.embedding_dim     = 1536                      # must match the migration
+  c.extra_municipalities = { "三鷹市" => "13204" } # JIS codes the packaged Geo table lacks
 end
 ```
+
+`extra_municipalities` matters as soon as you add a program outside the packaged table (東京23区 +
+さいたま市): without it, every resident of that municipality fails to normalize and the
+anti-omission rule caps their whole assessment at 要確認. Codes are Strings — leading zeros are
+significant, so a numeric or wrong-length code raises `ArgumentError` at assignment rather than
+degrading silently. Entries win over the packaged ones, and the packaged constant (and
+`data/geo.json`) is left untouched.
 
 Tests run entirely on the two Null adapters — deterministic, free, and zero network calls.
 

@@ -86,5 +86,79 @@ module KyufyCore
       assert_equal :ancestor, applies("さいたま市", jurisdiction: "municipality",
                                       prefecture_code: "11", municipality_code: "11105")
     end
+
+    # --- config.extra_municipalities ---
+    #
+    # The packaged table covers 東京23区 + さいたま市 only, so a host adding a 三鷹市 program has
+    # to extend it — otherwise every 三鷹市 resident's address fails to normalize and their whole
+    # assessment is capped at 要確認 (carve-out (a)), which looks like the engine is broken.
+
+    def with_municipalities(table)
+      KyufyCore.configure { |c| c.extra_municipalities = table }
+    end
+
+    test "no extra municipalities by default" do
+      assert_empty KyufyCore.config.extra_municipalities
+      assert_nil Geo.normalize("三鷹市")
+    end
+
+    test "a configured extra municipality normalizes like a packaged one" do
+      with_municipalities("三鷹市" => "13204")
+
+      r = Geo.normalize("三鷹市")
+      assert_equal "13", r.prefecture_code
+      assert_equal "13204", r.municipality_code
+    end
+
+    test "extra municipalities resolve in the prefecture-prefixed form too" do
+      with_municipalities("八王子市" => "13201")
+
+      assert_equal "13201", Geo.normalize("東京都八王子市").municipality_code
+    end
+
+    test "an extra municipality is admitted by its own and by prefecture-level programs" do
+      with_municipalities("三鷹市" => "13204")
+
+      assert_equal :match, applies("三鷹市", jurisdiction: "municipality",
+                                   prefecture_code: "13", municipality_code: "13204")
+      assert_equal :match, applies("三鷹市", jurisdiction: "prefecture", prefecture_code: "13")
+      assert_equal :none,  applies("三鷹市", jurisdiction: "municipality",
+                                   prefecture_code: "13", municipality_code: "13115")
+    end
+
+    test "extras win over packaged entries, so a stale code can be corrected without a fork" do
+      with_municipalities("新宿区" => "13199")
+
+      assert_equal "13199", Geo.normalize("新宿区").municipality_code
+    end
+
+    test "extras never mutate the packaged constant that data/geo.json exports" do
+      with_municipalities("三鷹市" => "13204")
+      Geo.normalize("三鷹市")
+
+      assert_not Geo::MUNICIPALITIES.key?("三鷹市")
+      assert_predicate Geo::MUNICIPALITIES, :frozen?
+    end
+
+    test "reassigning extra_municipalities takes effect immediately" do
+      with_municipalities("三鷹市" => "13204")
+      assert_equal "13204", Geo.normalize("三鷹市").municipality_code
+
+      with_municipalities("八王子市" => "13201")
+      assert_nil Geo.normalize("三鷹市"), "the previous table must not be cached"
+      assert_equal "13201", Geo.normalize("八王子市").municipality_code
+    end
+
+    test "rejects a numeric JIS code, which would have lost its leading zero" do
+      error = assert_raises(ArgumentError) { with_municipalities("札幌市" => 1100) }
+      assert_match(/5-digit JIS X 0402 code as a String/, error.message)
+    end
+
+    test "rejects a code that is not five digits, and a non-Hash table" do
+      assert_raises(ArgumentError) { with_municipalities("三鷹市" => "1320") }
+      assert_raises(ArgumentError) { with_municipalities("三鷹市" => "132040") }
+      assert_raises(ArgumentError) { with_municipalities("" => "13204") }
+      assert_raises(ArgumentError) { with_municipalities([ [ "三鷹市", "13204" ] ]) }
+    end
   end
 end

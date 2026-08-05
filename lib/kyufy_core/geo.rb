@@ -35,6 +35,9 @@ module KyufyCore
     # tests are enumerated (a full national table would be generated at ingestion time). Bare
     # ambiguous ward names ("中央区", "北区") are deliberately NOT keyed here: they resolve to
     # normalization failure -> 要確認, never a wrong match.
+    #
+    # Hosts add their own via `config.extra_municipalities` (see Configuration and the
+    # `municipalities` method below); this constant stays the packaged data.
     MUNICIPALITIES = {
       # 東京都特別区 (13101–13123) — each a full municipality, NO parent city.
       "千代田区" => "13101", "中央区（東京都）" => "13102", "港区（東京都）" => "13103",
@@ -53,6 +56,31 @@ module KyufyCore
 
     module_function
 
+    # The table lookups actually use: the packaged constant plus config.extra_municipalities.
+    # MUNICIPALITIES stays the canonical packaged data (data/geo.json exports the constant, not
+    # this), so a host's additions never leak into the export or into another host's view.
+    def municipalities
+      extras = configured_extra_municipalities
+      return MUNICIPALITIES if extras.empty?
+
+      # Keyed on object identity: Configuration freezes and replaces the hash on assignment, so
+      # a new object always means new content, and reassignment takes effect immediately.
+      cached = @municipalities_cache
+      return cached.last if cached && cached.first.equal?(extras)
+
+      merged = MUNICIPALITIES.merge(extras).freeze
+      @municipalities_cache = [ extras, merged ]
+      merged
+    end
+
+    # data_export.rb requires this file on its own (no Rails, no configuration), so tolerate a
+    # half-loaded library rather than making a pure-data module hard-depend on global config.
+    def configured_extra_municipalities
+      return {} unless KyufyCore.respond_to?(:config)
+
+      KyufyCore.config.extra_municipalities
+    end
+
     # Free text -> Residence, or nil on failure (caller applies carve-out (a): don't exclude).
     def normalize(text)
       return nil if text.nil?
@@ -60,7 +88,9 @@ module KyufyCore
       s = text.to_s.strip
       return nil if s.empty?
 
-      if (code = MUNICIPALITIES[s])
+      table = municipalities
+
+      if (code = table[s])
         return Residence.new(prefecture_code: code[0, 2], municipality_code: code, raw: s)
       end
 
@@ -73,7 +103,7 @@ module KyufyCore
         next unless s.start_with?(pref_name)
 
         rest = s[pref_name.length..]
-        if (code = MUNICIPALITIES[rest])
+        if (code = table[rest])
           return Residence.new(prefecture_code: code[0, 2], municipality_code: code, raw: s)
         end
       end
