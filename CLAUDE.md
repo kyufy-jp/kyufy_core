@@ -40,6 +40,11 @@ round-trip through Ruby `schema.rb`.
 - **Carve-out cap**: programs admitted via carve-out get a synthesized `residence_unverified`
   reason and are capped at 要確認 — even with no residence Requirement row.
 - **Fail-safe**: ambiguity / missing info / missing citation → 要確認, never a loose 該当.
+- **Rule-derived verdicts**: the LLM writes explanations, never verdicts. `Assessor#ground`
+  discards every field the adapter returns except `explanation`, and `build_reason` takes the
+  verdict from `RuleCheck` — so verdicts, citations and source URLs are identical under the Null
+  adapter and a real model. This is the invariant the README's one-line summary blurred until
+  2026-08-09: prose is evidence, never an input to the verdict.
 - **Identifiers**: expose prefixed IDs only (`prog_`/`req_`/`doc_`), never raw PKs. DocumentChunk
   has none.
 - **Aggregation precedence**: 非該当 > 要確認 > 該当 (AND semantics).

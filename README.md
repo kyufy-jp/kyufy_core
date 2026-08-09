@@ -22,8 +22,10 @@ pattern.
   alongside each machine-readable condition.
 - Chunking, embedding, and pgvector search of 要綱 text — used **for evidence**, never to gate
   which programs get assessed.
-- The `Assessor`: applicability filter → rule check → grounded LLM judgement → aggregation,
-  with fail-safe defaults (ambiguity → 要確認, never a loose 該当).
+- The `Assessor`: applicability filter → rule check → aggregation, with fail-safe defaults
+  (ambiguity → 要確認, missing citation → 要確認, never a loose 該当). **The LLM writes only the
+  explanation sentence** — `ground` keeps nothing but `explanation`, and `build_reason` takes the
+  verdict from `RuleCheck`, so verdicts and citations are identical with or without a model.
 - `Geo`: free-text residence → JIS codes, 政令指定都市 ward ↔ parent-city hierarchy, and the
   anti-omission rule — only status / date window / geography may exclude a program, and a
   residence that can't be normalized passes through capped at 要確認 rather than being dropped.
