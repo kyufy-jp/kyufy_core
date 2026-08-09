@@ -22,8 +22,13 @@ pattern.
   alongside each machine-readable condition.
 - Chunking, embedding, and pgvector search of 要綱 text — used **for evidence**, never to gate
   which programs get assessed.
-- The `Assessor`: applicability filter → rule check → grounded LLM judgement → aggregation,
-  with fail-safe defaults (ambiguity → 要確認, never a loose 該当).
+- The `Assessor`: applicability filter → rule check → aggregation, with fail-safe defaults
+  (ambiguity → 要確認, missing citation → 要確認, never a loose 該当). **The LLM writes only the
+  explanation sentence** — `ground` keeps nothing but `explanation`, and `build_reason` takes the
+  verdict from `RuleCheck`. **Evidence can only ever degrade a verdict, never create one**: with
+  no citation a requirement is capped at 要確認. Normally the citation is the 要綱 excerpt stored
+  on the requirement and no retrieval runs at all; retrieval is the fallback when `raw_text` is
+  empty, and there a missing chunk turns 該当 into 要確認 — never the other way.
 - `Geo`: free-text residence → JIS codes, 政令指定都市 ward ↔ parent-city hierarchy, and the
   anti-omission rule — only status / date window / geography may exclude a program, and a
   residence that can't be normalized passes through capped at 要確認 rather than being dropped.
@@ -96,7 +101,10 @@ declines to guess rather than returning a loose 該当.
   Override with `KYUFY_PORT` (and `KYUFY_DB_PORT`, default 5433, to reach the database directly).
 - **No API keys, no network.** The demo runs the Null adapters, so embeddings are deterministic and
   explanations are template prose. Verdicts, citations, and source URLs are rule-derived and are
-  identical with or without a model (§6) — the LLM only writes the explanation sentence.
+  identical with or without an **LLM** (§6) — it only writes the explanation sentence. The
+  **embedding** adapter is a different question: it is not consulted at all while a requirement
+  carries its own `raw_text` (every seeded one does), and where it is consulted it can only cost a
+  citation, which caps that requirement at 要確認.
   For real prose: `KYUFY_LLM=anthropic KYUFY_ANTHROPIC_API_KEY=sk-… docker compose up`.
 - **Reset:** `docker compose down -v`. Re-importing into a warm database would duplicate programs,
   so the entrypoint seeds only when the database is empty.
